@@ -10,13 +10,15 @@ jobs_links = lambda: [str(link.get('href'))
                     if str(link.get('href')).startswith('https://br.linkedin.com/jobs/view/')]
 
 def scrap_jobs_links():
+    name_link = []
+
     links_page_job = jobs_links()
     for link in links_page_job:
-        response = requests.get(link)
+        response = requests.get(link,headers=headers)
         soup = BeautifulSoup(response.text,'html.parser')
         job_name = soup.select_one('h1',{'class':'jobs-unified-top-card__job-title'}).get_text(strip=True)
-        print(job_name)
+        name_link[job_name] = link
 
-    print(links_page_job)
+    print(name_link)
 
 scrap_jobs_links()
