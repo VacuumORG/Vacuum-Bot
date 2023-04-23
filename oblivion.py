@@ -1,22 +1,33 @@
-import requests
-from bs4 import BeautifulSoup
+import discord
+from discord import app_commands
+from discord.ext import commands
+from dotenv import load_dotenv
+from os import getenv
+from jobs.programathor import get_link_jobs
 
-user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
-headers = {'User-Agent': user_agent}
-url = 'https://www.linkedin.com/jobs/search/?keywords=junior&location=Trabalho%20remoto'
+load_dotenv()
+token =getenv('TOKEN')
 
-jobs_links = lambda: [str(link.get('href'))
-                    for link in BeautifulSoup(requests.get(url, headers=headers).text, 'html.parser').find_all('a')
-                    if str(link.get('href')).startswith('https://br.linkedin.com/jobs/view/')]
+bot  = commands.Bot(command_prefix="/",intents= discord.Intents.all())
 
-def scrap_jobs_links():
-    links_page_job = jobs_links()
-    for link in links_page_job:
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text,'html.parser')
-        job_name = soup.select_one('h1',{'class':'jobs-unified-top-card__job-title'}).get_text(strip=True)
-        print(job_name)
+string_name =''.join(get_link_jobs())
 
-    print(links_page_job)
+@bot.event
+async def on_ready():
+    print("bot is up")
+    try:
+        synced = await bot.tree.sync()
+        print(f"synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
 
-scrap_jobs_links()
+@bot.tree.command(name='vagas')
+async def vagas(interaction: discord.integrations):
+    await interaction.response.send_message(string_name)
+
+@bot.tree.command(name="say")
+@app_commands.describe(thing_to_say = "What should I say?")
+async def say(interaction: discord.Interaction, thing_to_say: str):
+  await interaction.response.send_message(f"{interaction.user.name} said: `{thing_to_say}`")
+
+bot.run(token)
