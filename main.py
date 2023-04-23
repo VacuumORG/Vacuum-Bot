@@ -3,14 +3,19 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 from os import getenv
-from jobs.programathor import get_link_jobs
+from jobs.programathor import i
+from discord import Embed
+from discord.ui import Button,View
+from jobs.linkedin import get_job_links
 
 load_dotenv()
 token =getenv('TOKEN')
 
 bot  = commands.Bot(command_prefix="/",intents= discord.Intents.all())
 
-string_name =''.join(get_link_jobs())
+def format_dict_list(dict_list):
+    return "\n".join(f"{key}: {value}" for d in dict_list for key, value in d.items())
+
 
 @bot.event
 async def on_ready():
@@ -21,13 +26,23 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@bot.tree.command(name='vagas')
-async def vagas(interaction: discord.integrations):
-    await interaction.response.send_message(string_name)
+@bot.tree.command(name='vags')
+async def vags(interaction: discord.integrations):
+    linked = format_dict_list(get_job_links(search='junior',cd= True))
+    # thor=  i(search=programathor)
+    # output= []
+    # for job in thor:
+    #     techs_str = ", ".join(job["techs"])
 
-@bot.tree.command(name="say")
-@app_commands.describe(thing_to_say = "What should I say?")
-async def say(interaction: discord.Interaction, thing_to_say: str):
-  await interaction.response.send_message(f"{interaction.user.name} said: `{thing_to_say}`")
+    #     output.append(f'\nJob: {job["name"]}\nApply: {job["link"]}\nTechs: {techs_str}')
+
+    # result = "\n".join(output)
+
+    # await interaction.response.send_message(result,ephemeral= True, suppress_embeds= True )
+
+    await interaction.response.send_message(linked,ephemeral= True, suppress_embeds= True )
+
 
 bot.run(token)
+
+

@@ -3,22 +3,41 @@ from bs4 import BeautifulSoup
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
 headers = {'User-Agent': user_agent}
-url = 'https://www.linkedin.com/jobs/search/?keywords=junior&location=Trabalho%20remoto'
 
-jobs_links = lambda: [str(link.get('href'))
-                    for link in BeautifulSoup(requests.get(url, headers=headers).text, 'html.parser').find_all('a')
-                    if str(link.get('href')).startswith('https://br.linkedin.com/jobs/view/')]
+def get_job_links(search: str,cd: bool):
+    if cd == True:
+        cd = '?f_AL=true&'
+    else:
+        cd = ''
+    url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&{cd}?f_AL=true&location=Brazil&position=1&pageNum=0&f_TPR=r604800'
+    job_links = []
+    html_text = requests.get(url, headers=headers).text
+    soup = BeautifulSoup(html_text, 'html.parser')
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        if href and href.startswith('https://br.linkedin.com/jobs/view/'):
+            job_links.append(href)
 
-def scrap_jobs_links():
-    name_link = []
+    jobs = []
+    links_page_job = job_links
+    for idx, link in enumerate(links_page_job):
+        if idx == 3:
+            break
+        response = requests.get(link, headers=headers)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        job_name = soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'}).get_text(strip=True)
 
-    links_page_job = jobs_links()
-    for link in links_page_job:
-        response = requests.get(link,headers=headers)
-        soup = BeautifulSoup(response.text,'html.parser')
-        job_name = soup.select_one('h1',{'class':'jobs-unified-top-card__job-title'}).get_text(strip=True)
-        name_link[job_name] = link
+        job = {
+            '\nJob ': job_name,
+            'Apply ': link
+        }
+        jobs.append(job)
+    return jobs
 
-    print(name_link)
 
-scrap_jobs_links()
+def format_dict_list(dict_list):
+    return "\n".join(f"{key}: {value}" for d in dict_list for key, value in d.items())
+
+linked = format_dict_list(get_job_links(search='junior',cd= True))
+
+print(type(linked))

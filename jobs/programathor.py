@@ -1,26 +1,46 @@
 import requests
 from bs4 import BeautifulSoup
+from typing import List
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
 headers = {'User-Agent': user_agent}
 
-search_pleno = 'https://programathor.com.br/jobs-city/remoto?expertise=Pleno'
+def i(search: str)-> List[dict]:
+    vagas=[]
 
-search_senior = 'https://programathor.com.br/jobs-city/remoto?expertise=Sênior'
-
-def get_link_jobs(word_key):
-    search_junior = f'https://programathor.com.br/jobs-city/remoto?expertise={word_key}'
+    search_junior = f'https://programathor.com.br/jobs-city/remoto?expertise={search}'
     response = requests.get(search_junior,headers=headers)
     soup = BeautifulSoup(response.text,'html.parser')
-    jobs_name = soup.select('.line-height-30')[:3]
-    elements = soup.select('.cell-list a[href]')[:3]
-    name_links = []
-    for i in range(len(elements)):
-        href = elements[i].get('href')
-        href = "https://programathor.com.br" + href
-        name = jobs_name[i].get_text()
-        name_link = {'name': name, 'link_job': href}
-        name_links.append(name_link)
-    return name_links
+    jobs = soup.select('.cell-list')[:3]
 
-print (get_link_jobs())
+    for job in jobs:
+        name = job.find_all('h3')[0].get_text()
+        link = "https://programathor.com.br"+ job.select('a')[0].attrs['href']
+        techs =[]
+        for tech in job.find_all('span', {'class': 'tag-list background-gray'}):
+            techs.append(tech.get_text())
+
+        vaga_dict = {
+            'name': name,
+            'link': link,
+            'techs': techs
+        }
+
+        vagas.append(vaga_dict)
+
+    return vagas
+
+
+
+
+jobs = i(search='Júnior')
+output = []
+for job in jobs:
+    techs_str = ", ".join(job["techs"])
+
+    output.append(f'\nJob: {job["name"]}\nApply: {job["link"]}\nTechs: {techs_str}')
+
+result = "\n".join(output)
+
+
+
