@@ -1,12 +1,13 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+import asyncio
 from dotenv import load_dotenv
 from os import getenv
-from jobs.programathor import i
+from jobs.programathor import thor_jobs
 from discord import Embed
 from discord.ui import Button,View
-from jobs.linkedin import get_job_links
+from jobs.linkedin import linkedin_jobs
 
 load_dotenv()
 token =getenv('TOKEN')
@@ -15,7 +16,6 @@ bot  = commands.Bot(command_prefix="/",intents= discord.Intents.all())
 
 def format_dict_list(dict_list):
     return "\n".join(f"{key}: {value}" for d in dict_list for key, value in d.items())
-
 
 @bot.event
 async def on_ready():
@@ -26,23 +26,23 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@bot.tree.command(name='vags')
-async def vags(interaction: discord.integrations):
-    linked = format_dict_list(get_job_links(search='junior',cd= True))
-    # thor=  i(search=programathor)
-    # output= []
-    # for job in thor:
-    #     techs_str = ", ".join(job["techs"])
+@bot.tree.command(name='vagas')
+async def vagas(interaction: discord.Interaction, programathor: str):
+    # linked = linkedin_jobs(search=linkedin,cd=True)
+    # resultado = []
+    # for job in linked :
+    #     resultado.append(f'\nJob: {job["Job"]}:{job["Apply"]}')
+    #     resultt = "\n".join(resultado)
+    thor=  thor_jobs(search=programathor)
+    output= []
+    for job in thor:
+        techs_str = ", ".join(job["techs"])
 
-    #     output.append(f'\nJob: {job["name"]}\nApply: {job["link"]}\nTechs: {techs_str}')
+        output.append(f'\nJob: {job["name"]}\nApply: {job["link"]}\nTechs: {techs_str}')
 
-    # result = "\n".join(output)
+    result = "\n".join(output)
 
-    # await interaction.response.send_message(result,ephemeral= True, suppress_embeds= True )
-
-    await interaction.response.send_message(linked,ephemeral= True, suppress_embeds= True )
-
+    await interaction.response.send_message(content=result,ephemeral = True, suppress_embeds = True )
 
 bot.run(token)
-
 

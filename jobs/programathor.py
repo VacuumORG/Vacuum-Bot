@@ -5,7 +5,7 @@ from typing import List
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
 headers = {'User-Agent': user_agent}
 
-def i(search: str)-> List[dict]:
+def thor_jobs(search: str)-> List[dict]:
     vagas=[]
 
     search_junior = f'https://programathor.com.br/jobs-city/remoto?expertise={search}'
@@ -29,18 +29,5 @@ def i(search: str)-> List[dict]:
         vagas.append(vaga_dict)
 
     return vagas
-
-
-
-
-jobs = i(search='Júnior')
-output = []
-for job in jobs:
-    techs_str = ", ".join(job["techs"])
-
-    output.append(f'\nJob: {job["name"]}\nApply: {job["link"]}\nTechs: {techs_str}')
-
-result = "\n".join(output)
-
 
 
