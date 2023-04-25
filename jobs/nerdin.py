@@ -1,27 +1,24 @@
-import aiohttp
-import asyncio
+import requests
 from bs4 import BeautifulSoup
 
-async def fetch(url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            # espera 5 segundos antes de prosseguir
-            await asyncio.sleep(5)
-            html = await response.text()
-            return html
+user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
+headers = {'User-Agent': user_agent}
 
-url = 'https://www.nerdin.com.br/vagas?UF=HO&PalavraChave=desenvolvedor'
+def nerdin_vagas(search: str):
+    url =f'https://www.nerdin.com.br/func/FVagaListar.php?F=HO&NomeEspeciPalavraChave={search}&PermiteTrabalhoRemoto=0'
+    response = requests.get(url=url, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-loop = asyncio.get_event_loop()
-html = loop.run_until_complete(fetch(url))
+    job_links = [link.get('href') for link in soup.find_all('a', href=True) if link.get('href').startswith('vaga/')]
 
-# analisa o HTML com BeautifulSoup
+    link_complete = []
+    for link in job_links[:3]:
+        link_complete.append( 'https://www.nerdin.com.br/' + link)
 
+    b_tag = soup.select('span > b')[:3]
+    if b_tag:
+        text = b_tag[1].text
+        print(text)
+    print(b_tag)
 
-soup = BeautifulSoup(html, 'html.parser')
-
-# encontra a div com a classe 'divListaVagas'
-div_vagas = soup.find('div', {'id': 'divListaVagas'})
-
-# imprime o conteúdo da div encontrada
-print(div_vagas)
+nerdin_vagas(search='python')

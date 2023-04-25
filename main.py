@@ -1,13 +1,10 @@
 import discord
-from discord import app_commands
 from discord.ext import commands
-import asyncio
 from dotenv import load_dotenv
 from os import getenv
-from jobs.programathor import thor_jobs
-from discord import Embed
-from discord.ui import Button,View
-from jobs.linkedin import linkedin_jobs
+from jobs.Sites import Sites
+
+sites = Sites
 
 load_dotenv()
 token =getenv('TOKEN')
@@ -28,21 +25,16 @@ async def on_ready():
 
 @bot.tree.command(name='vagas')
 async def vagas(interaction: discord.Interaction, programathor: str):
-    # linked = linkedin_jobs(search=linkedin,cd=True)
+    # linked = sites.linkedin_jobs(search=linkedin,cd=True)
     # resultado = []
     # for job in linked :
     #     resultado.append(f'\nJob: {job["Job"]}:{job["Apply"]}')
     #     resultt = "\n".join(resultado)
-    thor=  thor_jobs(search=programathor)
-    output= []
-    for job in thor:
-        techs_str = ", ".join(job["techs"])
 
-        output.append(f'\nJob: {job["name"]}\nApply: {job["link"]}\nTechs: {techs_str}')
+    thor = format_dict_list(sites.thor_jobs(search=programathor))
 
-    result = "\n".join(output)
 
-    await interaction.response.send_message(content=result,ephemeral = True, suppress_embeds = True )
+    await interaction.response.send_message(content=thor, ephemeral = True, suppress_embeds = True )
 
 bot.run(token)
 
