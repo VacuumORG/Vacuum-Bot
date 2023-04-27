@@ -7,7 +7,7 @@ class Sites:
     def __init__(self) -> None:
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
         self.headers = {'User-Agent': self.user_agent}
-
+    
 
     def linkedin_jobs(self,search: str, cd: bool) -> List[dict]:
         cd = '?f_AL=true&' if cd else ''
@@ -23,9 +23,9 @@ class Sites:
 
         return jobs
 
-    def nerdin_vagas(search: str) -> List[dict]:
+    def nerdin_vagas(self,search: str) -> List[dict]:
         url =f'https://www.nerdin.com.br/func/FVagaListar.php?F=HO&NomeEspeciPalavraChave={search}&PermiteTrabalhoRemoto=0'
-        response = requests.get(url=url, headers=headers)
+        response = requests.get(url=url, headers=self.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         job_links = ['https://www.nerdin.com.br/' + link.get('href') for link in soup.find_all('a', href=True) if link.get('href').startswith('vaga/')][:3]
