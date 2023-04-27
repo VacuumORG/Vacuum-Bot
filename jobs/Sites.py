@@ -19,7 +19,9 @@ class Sites:
 
             soup = BeautifulSoup(response.text, 'html.parser')
             job_links = [link.get('href') for link in soup.find_all('a') if link.get('href') and link.get('href').startswith('https://br.linkedin.com/jobs/view/')]
-            jobs = [{'Job': soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'}).get_text(strip=True), 'Apply': link} for link in job_links[:3] for soup in [BeautifulSoup(session.get(link, headers=self.headers).text, 'html.parser')] if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
+            jobs = [{'Job': soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'}).get_text(strip=True),
+                      'Apply': link} for link in job_links[:3] for soup in [BeautifulSoup(session.get(link, headers=self.headers).text, 'html.parser')]
+                        if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
 
         return jobs
 
@@ -28,7 +30,8 @@ class Sites:
         response = requests.get(url=url, headers=self.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        job_links = ['https://www.nerdin.com.br/' + link.get('href') for link in soup.find_all('a', href=True) if link.get('href').startswith('vaga/')][:3]
+        job_links = ['https://www.nerdin.com.br/' + link.get('href') for link in soup.find_all('a', href=True)
+                      if link.get('href').startswith('vaga/')][:3]
         job_name = soup.select('span:nth-child(1) b')[:3]
 
         jobs = list(map(lambda x: {'Job': x[1].text, 'Apply': x[0]}, zip(job_links, job_name)))
