@@ -10,80 +10,47 @@ class Sites:
 
 
     def linkedin_jobs(self,search: str, cd: bool) -> List[dict]:
-        if cd == True:
-            cd = '?f_AL=true&'
-        else:
-            cd = ''
-        url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&{cd}location=Brazil&position=1&pageNum=0&f_TPR=r604800'
+        cd = '?f_AL=true&' if cd else ''
 
-        jobs = []
+        url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&{cd}location=Brazil&position=1&pageNum=0&f_TPR=r604800'
         with requests.Session() as session:
             response = session.get(url, headers=self.headers)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, 'html.parser')
             job_links = [link.get('href') for link in soup.find_all('a') if link.get('href') and link.get('href').startswith('https://br.linkedin.com/jobs/view/')]
-
-            for link in job_links[:3]:
-                response = session.get(link, headers=self.headers)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, 'html.parser')
-
-                job_name = soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})
-                if not job_name:
-                    continue
-
-                job_re = job_name.get_text(strip=True)
-
-
-            job = {
-                'Job': job_re,
-                'Apply': link
-            }
-            jobs.append(job)
+            jobs = [{'Job': soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'}).get_text(strip=True), 'Apply': link} for link in job_links[:3] for soup in [BeautifulSoup(session.get(link, headers=self.headers).text, 'html.parser')] if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
 
         return jobs
 
-
-    def nerdin_jobs(self,search: str) -> List[dict]:
+    def nerdin_vagas(search: str) -> List[dict]:
         url =f'https://www.nerdin.com.br/func/FVagaListar.php?F=HO&NomeEspeciPalavraChave={search}&PermiteTrabalhoRemoto=0'
-        response = requests.get(url=url, headers=self.headers)
+        response = requests.get(url=url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        job_links = [link.get('href') for link in soup.find_all('a', href=True) if link.get('href').startswith('vaga/')]
+        job_links = ['https://www.nerdin.com.br/' + link.get('href') for link in soup.find_all('a', href=True) if link.get('href').startswith('vaga/')][:3]
+        job_name = soup.select('span:nth-child(1) b')[:3]
 
-        link_complete = []
-        for link in job_links[:3]:
-            link_complete.append( 'https://www.nerdin.com.br/' + link)
+        job_list = list(map(lambda x: {'Job': x[1].text, 'Apply': x[0]}, zip(job_links, job_name)))
 
-        b_tag = soup.select('span.style > b')[:3]
-        if b_tag:
-            text = b_tag[1].text
-            print(text)
-        print(b_tag)
+        return job_list
+
 
     def thor_jobs(self,search: str)-> List[dict]:
-        vagas=[]
-
+        """
+        Args:
+            search (str): this string can only receive 3 parameters which are 'Junior'/'Full/Senior'.
+        Returns:
+            List[dict]: returns a dictionary list with the keys 'Job'/'Apply'/'Techs'.
+        """
         search_junior = f'https://programathor.com.br/jobs-city/remoto?expertise={search}'
         response = requests.get(search_junior,headers=self.headers)
         soup = BeautifulSoup(response.text,'html.parser')
         jobs = soup.select('.cell-list')[:3]
 
-        for job in jobs:
-            name = job.find_all('h3')[0].get_text()
-            link = "https://programathor.com.br"+ job.select('a')[0].attrs['href']
-            techs =[]
-            for tech in job.find_all('span', {'class': 'tag-list background-gray'}):
-                techs.append(tech.get_text())
-
-            vaga_dict = {
-                'Job': name,
-                'Apply': link,
-                'Techs': techs
-            }
-
-            vagas.append(vaga_dict)
+        vagas = [{'Job': job.find_all('h3')[0].get_text(),
+          'Apply': "https://programathor.com.br"+ job.select('a')[0].attrs['href'],
+          'Techs': [tech.get_text() for tech in job.find_all('span', {'class': 'tag-list background-gray'})]} for job in jobs]
 
         return vagas
 
