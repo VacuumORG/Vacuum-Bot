@@ -21,7 +21,7 @@ class Sites:
             job_links = [link.get('href') for link in soup.find_all('a') if link.get('href') and link.get('href').startswith('https://br.linkedin.com/jobs/view/')]
             jobs = [{'Job': soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'}).get_text(strip=True),
                       'Apply': link} for link in job_links[:3] for soup in [BeautifulSoup(session.get(link, headers=self.headers).text, 'html.parser')]
-                        if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
+                       if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
 
         return jobs
 
@@ -42,9 +42,9 @@ class Sites:
     def thor_jobs(self,search: str)-> List[dict]:
         """
         Args:
-            search (str): this string can only receive 3 parameters which are 'Junior'/'Full/Senior'.
+            search (str): this string can only receive 3 parameters which are 'Júnior'/'Pleno'/'Sênior'.
         Returns:
-            List[dict]: returns a dictionary list with the keys 'Job'/'Apply'/'Techs'.
+            List[dict]: returns a dictionary list with the keys 'Job: str'/'Apply: str'/'Techs: list of str'.
         """
         search_junior = f'https://programathor.com.br/jobs-city/remoto?expertise={search}'
         response = requests.get(search_junior,headers=self.headers)
