@@ -8,8 +8,7 @@ class Sites:
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
         self.headers = {'User-Agent': self.user_agent}
 
-
-    def linkedin_jobs(self,search: str, cd: bool) -> List[dict]:
+    def linkedin_jobs(self, search: str, cd: bool) -> List[dict]:
         cd = '?f_AL=true&' if cd else ''
 
         url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&{cd}location=Brazil&position=1&pageNum=0&f_TPR=r604800'
@@ -18,10 +17,12 @@ class Sites:
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, 'html.parser')
-            job_links = [link.get('href') for link in soup.find_all('a') if link.get('href') and link.get('href').startswith('https://br.linkedin.com/jobs/view/')]
+            job_links = [link.get('href') for link in soup.find_all('a') if
+                         link.get('href') and link.get('href').startswith('https://br.linkedin.com/jobs/view/')]
             jobs = [{'Job': soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'}).get_text(strip=True),
-                      'Apply': link} for link in job_links[:3] for soup in [BeautifulSoup(session.get(link, headers=self.headers).text, 'html.parser')]
-                       if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
+                     'Apply': link} for link in job_links for soup in
+                    [BeautifulSoup(session.get(link, headers=self.headers).text, 'html.parser')]
+                    if soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})]
 
         return jobs
 
@@ -56,4 +57,3 @@ class Sites:
           'Techs': [tech.get_text() for tech in job.find_all('span', {'class': 'tag-list background-gray'})]} for job in jobs]
 
         return jobs
-
