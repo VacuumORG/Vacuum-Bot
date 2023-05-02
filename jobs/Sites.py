@@ -26,14 +26,14 @@ class Sites:
 
         return jobs
 
-    def nerdin_jobs(self,search: str) -> List[dict]:
-        url =f'https://www.nerdin.com.br/func/FVagaListar.php?F=HO&NomeEspeciPalavraChave={search}&PermiteTrabalhoRemoto=0'
+    def nerdin_jobs(self, search: str) -> List[dict]:
+        url = f'https://www.nerdin.com.br/func/FVagaListar.php?F=HO&NomeEspeciPalavraChave={search}&PermiteTrabalhoRemoto=0'
         response = requests.get(url=url, headers=self.headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         job_links = ['https://www.nerdin.com.br/' + link.get('href') for link in soup.find_all('a', href=True)
-                      if link.get('href').startswith('vaga/')][:3]
-        job_name = soup.select('span:nth-child(1) b')[:3]
+                     if link.get('href').startswith('vaga/')]
+        job_name = soup.select('span:nth-child(1) b')
 
         jobs = list(map(lambda x: {'Job': x[1].text, 'Apply': x[0]}, zip(job_links, job_name)))
 
