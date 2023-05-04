@@ -1,8 +1,9 @@
+import asyncio
 import aiohttp
-from bs4 import BeautifulSoup
-from typing import List
 import certifi
 import ssl
+from bs4 import BeautifulSoup
+from typing import List
 
 
 def check_if_thor_job_is_expired(job_soup):
@@ -18,20 +19,29 @@ class Sites:
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0'
         self.headers = {'User-Agent': self.user_agent}
 
+    async def _single_fetch(self, session, url, raise_exception: bool):
+        print(f"Start fetching URL: {url}")
+
+        async with session.get(url, headers=self.headers) as response:
+            if response.status != 200:
+                print(f"Fetch error | {response.status} | {url}")
+                if raise_exception:
+                    response.raise_for_status()
+            print(f"Done fetching URL: {url}")
+            return url, await response.text()
+
     async def _fetch_urls_async(self, urls: List[str], raise_exception: bool = False):
         # Foi necessário adicionar essa etapa de ssl pois usar apenas o aiohttp estava dando exception de certificação
         # Importante checar se essa solução é a ideal. Por enquanto resolveu o problema.
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         conn = aiohttp.TCPConnector(ssl=ssl_context)
-        ret_response_content = dict()
+        tasks = []
         async with aiohttp.ClientSession(connector=conn) as session:
             for url in urls:
-                async with session.get(url, headers=self.headers) as resp:
-                    if raise_exception:
-                        resp.raise_for_status()
-                    resp_content = await resp.text()
-                    ret_response_content[url] = resp_content
-        return ret_response_content
+                task = asyncio.create_task(self._single_fetch(session, url, raise_exception))
+                tasks.append(task)
+            results = await asyncio.gather(*tasks)
+            return dict(results)
 
     async def linkedin_jobs(self, search: str, cd: bool) -> List[dict]:
         cd = '?f_AL=true&' if cd else ''
