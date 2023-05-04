@@ -50,16 +50,13 @@ class Sites:
         resp_content = await self._fetch_urls_async([url])
         soup = BeautifulSoup(resp_content[url], 'html.parser')
 
-        job_links = [link.get('href') for link in soup.find_all('a') if
-                     link.get('href') and link.get('href').startswith('https://br.linkedin.com/jobs/view/')]
-
-        job_link_content = await self._fetch_urls_async(job_links)
+        job_elements = soup.select_one('ul.jobs-search__results-list').select('li')
         jobs = []
-        for link in job_links:
-            soup = BeautifulSoup(job_link_content[link], 'html.parser')
-            title = soup.select_one('h1', {'class': 'jobs-unified-top-card__job-title'})
-            if title:
-                jobs.append({'Job': title.get_text(strip=True), 'Apply': link})
+        for job_element in job_elements:
+            job_a = job_element.select_one('div a')
+            job_link = job_a.get('href')
+            job_title = job_a.select_one('span').text.strip()
+            jobs.append({'Job': job_title, 'Apply': job_link})
         return jobs
 
     async def nerdin_jobs(self, search: str) -> List[dict]:
