@@ -9,6 +9,7 @@ from jobs.utils import sanitize_job_title
 ## Temporary map
 SENIORITY_MAP = {Seniority.Junior: 3, Seniority.Senior: 1, Seniority.Pleno: 2}
 PAGES_PER_SCRAPING_PROCESS = 4
+MAX_JOB_OPEN_DAYS = 30 * 6  # 6 months
 
 
 def create_search_url(seniority_level: Seniority, page=0):
@@ -17,6 +18,21 @@ def create_search_url(seniority_level: Seniority, page=0):
     seniority = f'CodigoNivel={SENIORITY_MAP[seniority_level]}&'
     pagination = f'CodigoVagaProxima={(page - 1) * 50}&' if page else ''
     return base_url + home_office + seniority + pagination
+
+
+def check_job_age(job_soup):
+    job_age_string = job_soup.select('a span')[-1].text.split('|')[0].strip()
+    print("Job age string -> ", job_age_string)
+    if job_age_string.startswith('Há'):
+        try:
+            job_age_days_string = job_age_string.split(' ')[1]
+            job_age_days = int(job_age_days_string)
+            print("Job age days -> ", job_age_days)
+            if job_age_days > MAX_JOB_OPEN_DAYS:
+                return False
+        except:
+            pass
+    return True
 
 
 async def scrap_nerdin_jobs(seniority_level: Seniority) -> List[dict]:
@@ -31,7 +47,7 @@ async def scrap_nerdin_jobs(seniority_level: Seniority) -> List[dict]:
         for url, content in responses.items():
             soup = BeautifulSoup(content, 'html.parser')
             job_containers = soup.select("div.container")
-            job_anchors = [x.select_one('a') for x in job_containers]
+            job_anchors = [job.select_one('a') for job in job_containers if check_job_age(job)]
             jobs.extend([{'Job': sanitize_job_title(anchor.select_one('span:nth-child(1) b').text),
                           'Apply': 'https://www.nerdin.com.br/' + anchor.get('href')} for anchor in
                          job_anchors])
