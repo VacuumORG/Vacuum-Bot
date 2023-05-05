@@ -1,9 +1,42 @@
 import asyncio
+import re
+import ssl
+from enum import Enum, auto
+from typing import List
+
 import aiohttp
 import certifi
-import ssl
 from bs4 import BeautifulSoup
-from typing import List
+
+
+class Seniority(Enum):
+    JUNIOR = auto()
+    SENIOR = auto()
+    PLENO = auto()
+
+
+## Temporary map
+SENIORITY_LEVEL_MAP = {"Júnior": Seniority.JUNIOR, "Pleno": Seniority.PLENO, "Sênior": Seniority.SENIOR}
+
+NERDIN_SENIORITY_MAP = {Seniority.JUNIOR: 3, Seniority.SENIOR: 1, Seniority.PLENO: 2}
+NERDIN_PAGES_PER_SCRAPING_PROCESS = 4
+
+
+def sanitize_job_title(job_title):
+    job_title = job_title.strip()
+    job_title = job_title.replace('\n', '')
+    job_title = re.sub(
+        r'''(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))''',
+        " ", job_title)
+    return job_title
+
+
+def create_nerdin_url(seniority_level: Seniority, page=0):
+    base_url = "https://nerdin.com.br/func/FVagaListar.php?"
+    home_office = 'UF=HO&'
+    seniority = f'CodigoNivel={NERDIN_SENIORITY_MAP[seniority_level]}&'
+    pagination = f'CodigoVagaProxima={(page - 1) * 50}&' if page else ''
+    return base_url + home_office + seniority + pagination
 
 
 def check_if_thor_job_is_expired(job_soup):
@@ -44,6 +77,7 @@ class Sites:
             return dict(results)
 
     async def linkedin_jobs(self, search: str, cd: bool) -> List[dict]:
+        search = f"TI {search}"
         cd = '?f_AL=true&' if cd else ''
         url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&{cd}location=Brazil&position=1&pageNum=0&f_TPR=r604800'
 
@@ -55,21 +89,30 @@ class Sites:
         for job_element in job_elements:
             job_a = job_element.select_one('div a')
             job_link = job_a.get('href')
-            job_title = job_a.select_one('span').text.strip()
-            jobs.append({'Job': job_title, 'Apply': job_link})
+            job_title = job_a.select_one('span').text
+            jobs.append({'Job': sanitize_job_title(job_title), 'Apply': job_link})
         return jobs
 
     async def nerdin_jobs(self, search: str) -> List[dict]:
-        url = f'https://www.nerdin.com.br/func/FVagaListar.php?F=HO&NomeEspeciPalavraChave={search}&PermiteTrabalhoRemoto=0'
+        seniority_level = SENIORITY_LEVEL_MAP[search]
+        jobs = []
+        page = 0
+        loop = True
+        while loop:
+            urls = [create_nerdin_url(seniority_level, page) for page in
+                    range(page, page + NERDIN_PAGES_PER_SCRAPING_PROCESS)]
+            responses = await self._fetch_urls_async(urls)
 
-        resp_content = await self._fetch_urls_async([url])
-        soup = BeautifulSoup(resp_content[url], 'html.parser')
-
-        job_links = ['https://www.nerdin.com.br/' + link.get('href') for link in soup.find_all('a', href=True)
-                     if link.get('href').startswith('vaga/')]
-        job_names = soup.select('span:nth-child(1) b')
-
-        jobs = [{'Job': job_name.text, 'Apply': link} for link, job_name in zip(job_links, job_names)]
+            for url, content in responses.items():
+                soup = BeautifulSoup(content, 'html.parser')
+                job_containers = soup.select("div.container")
+                job_anchors = [x.select_one('a') for x in job_containers]
+                jobs.extend([{'Job': sanitize_job_title(anchor.select_one('span:nth-child(1) b').text),
+                              'Apply': 'https://www.nerdin.com.br/' + anchor.get('href')} for anchor in
+                             job_anchors])
+                if len(job_anchors) < 50:
+                    loop = False
+                    break
         return jobs
 
     async def thor_jobs(self, search: str) -> List[dict]:
@@ -86,7 +129,7 @@ class Sites:
 
         jobs = [job for job in jobs if not check_if_thor_job_is_broken(job) and not check_if_thor_job_is_expired(job)]
 
-        jobs = [{'Job': job.find_all('h3')[0].get_text(),
+        jobs = [{'Job': sanitize_job_title(job.find_all('h3')[0].text),
                  'Apply': "https://programathor.com.br" + job.select('a')[0].attrs['href'],
                  'Techs': [tech.get_text() for tech in job.find_all('span', {'class': 'tag-list background-gray'})]} for
                 job in jobs]
