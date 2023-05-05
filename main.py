@@ -1,11 +1,9 @@
+import asyncio
+from os import getenv
+
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from os import getenv
-from jobs.Sites import Sites
-import asyncio
-
-sites = Sites()
 
 load_dotenv()
 token = getenv('TOKEN')
@@ -31,13 +29,6 @@ def format_dict_list(dict_list):
 @bot.event
 async def on_ready():
     print("bot is up")
-
-
-# @bot.tree.command(name='vagas')
-# async def vagas(interaction: discord.Interaction, programathor: str):
-#     thor = format_dict_list(sites.thor_jobs(search=programathor))
-#
-#     await interaction.response.send_message(content=thor, ephemeral=True, suppress_embeds=True)
 
 
 async def setup_extensions():
