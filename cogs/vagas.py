@@ -38,6 +38,12 @@ class Vagas(commands.Cog):
         self.bot = bot
         self.scraper = Scraper()
 
+    def get_helper(self):
+        help_text = """• /vagas [Junior|Pleno|Senior] - Pesquise por vagas utilizando parametros de busca.
+        """
+        group_name = "Vagas"
+        return [group_name, help_text]
+
     async def scrap_and_update_menu_with_jobs(self, seniority: Seniority, menu):
         jobs = await self.scraper.scrap(seniority)
         pages_title = f"Mostrando vagas de {seniority.name}"
