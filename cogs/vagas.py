@@ -1,20 +1,34 @@
-import typing
+from typing import Optional
+
 import discord
-from typing import Optional, Literal
 from discord import Interaction
 from discord.ext import commands
 from reactionmenu import ViewMenu, ViewButton
 
-from tools import chunks
-from jobs.Sites import Sites
-
-SENIORITY_LEVELS = Literal['Júnior', 'Pleno', 'Sênior']
-JOBS_PER_PAGE = 10
+from enums import Seniority
+from jobs.scraper import Scraper
 
 
-def build_jobs_page(title, jobs):
-    description = "\n".join([f"[{job['Job']}]({job['Apply']})" for job in jobs])
-    return discord.Embed(title=title, description=description)
+class PageBuilder:
+    def __init__(self, pages_title, max_content_size=4096, max_lines=15):
+        self.title = pages_title
+        self._pages = []
+        self._buffer = ""
+        self._max_size = max_content_size
+        self._max_lines = max_lines
+
+    def add_line(self, content):
+        if len(self._buffer) + len(content) > self._max_size or (self._buffer.count('\n') + 1) >= self._max_lines:
+            new_page = discord.Embed(title=self.title, description=self._buffer)
+            self._pages.append(new_page)
+            self._buffer = ""
+        self._buffer = self._buffer + ('\n' if self._buffer else '') + content
+
+    def get_pages(self):
+        last_page = discord.Embed(title=self.title, description=self._buffer)
+        pages = [*self._pages, last_page]
+        self._pages = []
+        return pages
 
 
 class Vagas(commands.Cog):
@@ -22,29 +36,27 @@ class Vagas(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.sites = Sites()
+        self.scraper = Scraper()
 
-    async def scrap_and_update_menu_with_jobs(self, seniority: SENIORITY_LEVELS, menu):
-        linkedin_jobs = await self.sites.linkedin_jobs(seniority, True)
-        nerdin_jobs = await self.sites.nerdin_jobs(seniority)
-        thor_jobs = await self.sites.thor_jobs(seniority)
-        jobs = [*linkedin_jobs, *nerdin_jobs, *thor_jobs]
-        chunked_jobs = chunks(jobs, JOBS_PER_PAGE)
-
-        pages_title = f"Mostrando vagas de {seniority}"
-        pages = [build_jobs_page(pages_title, page_jobs) for page_jobs in chunked_jobs]
+    async def scrap_and_update_menu_with_jobs(self, seniority: Seniority, menu):
+        jobs = await self.scraper.scrap(seniority)
+        pages_title = f"Mostrando vagas de {seniority.name}"
+        pages_builder = PageBuilder(pages_title)
+        for job in jobs:
+            pages_builder.add_line(f"[{job['Job']}]({job['Apply']})")
+        pages = pages_builder.get_pages()
         await menu.update(new_pages=pages, new_buttons=[ViewButton.back(), ViewButton.next(), ViewButton.end_session()])
 
     @discord.app_commands.command(name='vagas')
     @discord.app_commands.rename(seniority='senioridade')
     @discord.app_commands.describe(seniority="Escolha a senioridade da vaga.")
-    async def vagas(self, interaction: Interaction, seniority: Optional[SENIORITY_LEVELS] = None):
+    async def vagas(self, interaction: Interaction, seniority: Optional[Seniority] = None):
         """Pesquise por vagas utilizando nosso bot."""
         menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed, timeout=180)
 
         if seniority:
             menu.add_page(discord.Embed(title="Vacuum Vagas",
-                                        description=f"Segura um tico ai campeão, estou buscando as vagas de {seniority} ..."))
+                                        description=f"Segura um tico ai campeão, estou buscando as vagas de {seniority.name} ..."))
             menu.add_button(ViewButton.end_session())
 
             await menu.start()
@@ -55,8 +67,8 @@ class Vagas(commands.Cog):
             menu.add_page(discord.Embed(title="Vacuum Vagas",
                                         description="Bem vindo ao bot de vagas da Vacuum!\nSelecione o nível de senioridade da vaga que você deseja procurar."))
             empty_followup = ViewButton.Followup(details=ViewButton.Followup.set_caller_details(lambda: ...))
-            for level in typing.get_args(SENIORITY_LEVELS):
-                button = ViewButton(label=str(level), custom_id=ViewButton.ID_CALLER, followup=empty_followup)
+            for level in Seniority:
+                button = ViewButton(label=str(level.name), custom_id=ViewButton.ID_CALLER, followup=empty_followup)
                 menu.add_button(button)
 
             async def update_page(payload):
@@ -66,7 +78,7 @@ class Vagas(commands.Cog):
                                          description=f"Segura um tico ai campeão, estou buscando as vagas de {selected_seniority} ...")
                 await menu.update(new_pages=[new_page], new_buttons=[ViewButton.end_session()])
                 print(f"{interaction.id} | Start scrapping process")
-                await self.scrap_and_update_menu_with_jobs(selected_seniority, menu)
+                await self.scrap_and_update_menu_with_jobs(Seniority[selected_seniority], menu)
                 print(f"{interaction.id} | Done")
 
             menu.set_relay(update_page)
