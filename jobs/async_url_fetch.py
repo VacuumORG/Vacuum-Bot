@@ -10,14 +10,10 @@ HEADERS = {'User-Agent': USER_AGENT}
 
 
 async def do_single_fetch(session, url, raise_exception: bool):
-    print(f"Start fetching URL: {url}")
-
     async with session.get(url, headers=HEADERS) as response:
         if response.status != 200:
-            print(f"Fetch error | {response.status} | {url}")
             if raise_exception:
                 response.raise_for_status()
-        print(f"Done fetching URL: {url}")
         return url, await response.text()
 
 
