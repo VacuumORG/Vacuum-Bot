@@ -66,9 +66,7 @@ class Vagas(commands.Cog):
             menu.add_button(ViewButton.end_session())
 
             await menu.start()
-            print(f"{interaction.id} | Start scrapping process")
             await self.scrap_and_update_menu_with_jobs(seniority, menu)
-            print(f"{interaction.id} | Done")
         else:
             menu.add_page(discord.Embed(title="Vacuum Vagas",
                                         description="Bem vindo ao bot de vagas da Vacuum!\nSelecione o nível de senioridade da vaga que você deseja procurar."))
@@ -83,9 +81,7 @@ class Vagas(commands.Cog):
                 new_page = discord.Embed(title="Vacuum Vagas",
                                          description=f"Segura um tico ai campeão, estou buscando as vagas de {selected_seniority} ...")
                 await menu.update(new_pages=[new_page], new_buttons=[ViewButton.end_session()])
-                print(f"{interaction.id} | Start scrapping process")
                 await self.scrap_and_update_menu_with_jobs(Seniority[selected_seniority], menu)
-                print(f"{interaction.id} | Done")
 
             menu.set_relay(update_page)
             await menu.start()
