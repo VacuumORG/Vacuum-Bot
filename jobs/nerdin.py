@@ -22,12 +22,10 @@ def create_search_url(seniority_level: Seniority, page=0):
 
 def check_job_age(job_soup):
     job_age_string = job_soup.select('a span')[-1].text.split('|')[0].strip()
-    print("Job age string -> ", job_age_string)
     if job_age_string.startswith('Há'):
         try:
             job_age_days_string = job_age_string.split(' ')[1]
             job_age_days = int(job_age_days_string)
-            print("Job age days -> ", job_age_days)
             if job_age_days > MAX_JOB_OPEN_DAYS:
                 return False
         except:
