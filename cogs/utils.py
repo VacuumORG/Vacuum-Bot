@@ -16,7 +16,8 @@ class Utils(commands.Cog):
 
     @discord.app_commands.command(name='commands')
     async def commands(self, interaction: Interaction):
-        helpers = [cog.get_helper() for cog in self.bot.cogs.values()]
+        hasHelper = lambda x: hasattr(x, 'get_helper') and callable(getattr(x, 'get_helper'))
+        helpers = [cog.get_helper() for cog in self.bot.cogs.values() if hasHelper(cog)]
         helpers_dict = dict(helpers)
 
         actual_helper = helpers[0]
