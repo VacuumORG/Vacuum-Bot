@@ -43,7 +43,8 @@ extensions = [
 
 @bot.event
 async def on_ready():
-    print("bot is up")
+    print("Bot is Up!")
+    logger.info("Bot is Up!")
 
 
 async def setup_extensions():
