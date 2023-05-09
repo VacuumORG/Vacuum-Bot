@@ -54,9 +54,7 @@ async def setup_extensions():
 
 
 async def setup_hook():
-    bot.tree.clear_commands(guild=guild)
-    bot.tree.copy_global_to(guild=guild)
-    await bot.tree.sync()
+    # bot.tree.copy_global_to(guild=guild)
     await bot.tree.sync(guild=guild)
 
 

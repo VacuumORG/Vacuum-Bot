@@ -31,6 +31,8 @@ class Admin(commands.Cog):
     async def sync(self, ctx: Context) -> None:
         """Sync the app commands tree with Discord."""
         try:
+            ctx.bot.tree.clear_commands(guild=ctx.guild)
+            ctx.bot.tree.copy_global_to(guild=ctx.guild)
             synced = await ctx.bot.tree.sync(guild=ctx.guild)
             synced_str = ",".join([sync_command.name for sync_command in synced])
             await ctx.send(f"Synced {synced_str} commands!")
