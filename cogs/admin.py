@@ -8,6 +8,11 @@ class Admin(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def cog_check(self, ctx: Context) -> bool:
+        user_roles = ctx.author.roles
+        allowed_roles = ['ADM', 'Líderes']
+        return any([role.name in allowed_roles for role in user_roles])
+
     @commands.command(name='reload')
     async def _reload(self, ctx: Context, *, module: str):
         """Reloads a module."""
