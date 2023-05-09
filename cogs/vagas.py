@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import discord
@@ -7,6 +8,8 @@ from reactionmenu import ViewMenu, ViewButton
 
 from enums import Seniority
 from jobs.scraper import Scraper
+
+_log = logging.getLogger('discord')
 
 
 class PageBuilder:
@@ -45,7 +48,11 @@ class Vagas(commands.Cog):
         return [group_name, help_text]
 
     async def scrap_and_update_menu_with_jobs(self, seniority: Seniority, menu):
-        jobs = await self.scraper.scrap(seniority)
+        jobs, errors = await self.scraper.scrap(seniority)
+        for err in errors:
+            _log.error(f"Error on scraping process. Exception : {err}")
+        if not jobs:
+            raise RuntimeError("Cannot retrieve any jobs from scraping process.")
         pages_title = f"Mostrando vagas de {seniority.name}"
         pages_builder = PageBuilder(pages_title)
         for job in jobs:
@@ -58,7 +65,7 @@ class Vagas(commands.Cog):
     @discord.app_commands.describe(seniority="Escolha a senioridade da vaga.")
     async def vagas(self, interaction: Interaction, seniority: Optional[Seniority] = None):
         """Pesquise por vagas utilizando nosso bot."""
-        menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed, timeout=180)
+        menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed, timeout=180, name=f'{interaction.id}')
 
         if seniority:
             menu.add_page(discord.Embed(title="Vacuum Vagas",
@@ -85,6 +92,14 @@ class Vagas(commands.Cog):
 
             menu.set_relay(update_page)
             await menu.start()
+
+    @vagas.error
+    async def vagas_error(self, interaction: Interaction, error):
+        await ViewMenu.stop_session(f'{interaction.id}')
+        _log.critical(f"Unexpected Internal Error: {error}")
+        await interaction.edit_original_response(
+            content="Aconteceu algum erro enquanto tentava encontrar suas vagas. Por favor, relate o problema para algum moderador da Vacuum.",
+            embed=None, view=None)
 
     """ Vou deixar esse código comentado para implementações futuras"""
     # @discord.app_commands.command(name='vagas')

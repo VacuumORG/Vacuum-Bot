@@ -8,7 +8,7 @@ from jobs.utils import sanitize_job_title
 
 ## Temporary map
 SENIORITY_MAP = {Seniority.Junior: 3, Seniority.Senior: 1, Seniority.Pleno: 2}
-PAGES_PER_SCRAPING_PROCESS = 4
+PAGES_PER_SCRAPING_LOOP = 4
 MAX_JOB_OPEN_DAYS = 30 * 6  # 6 months
 
 
@@ -33,23 +33,27 @@ def check_job_age(job_soup):
     return True
 
 
-async def scrap_nerdin_jobs(seniority_level: Seniority) -> List[dict]:
-    jobs = []
+async def scrap_nerdin_jobs(seniority_level: Seniority) -> List[dict | Exception]:
+    results = []
     page = 0
     loop = True
     while loop:
         urls = [create_search_url(seniority_level, page) for page in
-                range(page, page + PAGES_PER_SCRAPING_PROCESS)]
+                range(page, page + PAGES_PER_SCRAPING_LOOP)]
         responses = await fetch_urls(urls)
 
-        for url, content in responses.items():
+        for content in responses.values():
+            if isinstance(content, Exception):
+                results.append(content)
+                loop = False
+                continue
             soup = BeautifulSoup(content, 'html.parser')
             job_containers = soup.select("div.container")
             job_anchors = [job.select_one('a') for job in job_containers if check_job_age(job)]
-            jobs.extend([{'Job': sanitize_job_title(anchor.select_one('span:nth-child(1) b').text),
-                          'Apply': 'https://www.nerdin.com.br/' + anchor.get('href')} for anchor in
-                         job_anchors])
+            results.extend([{'Job': sanitize_job_title(anchor.select_one('span:nth-child(1) b').text),
+                             'Apply': 'https://www.nerdin.com.br/' + anchor.get('href')} for anchor in
+                            job_anchors])
             if len(job_anchors) < 50:
                 loop = False
                 break
-    return jobs
+    return results
