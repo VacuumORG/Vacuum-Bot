@@ -8,9 +8,7 @@ from dotenv import load_dotenv
 
 # Setting log
 logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
-logging.getLogger('discord.http').setLevel(logging.INFO)
-
+logger.setLevel(logging.INFO)
 handler = logging.handlers.RotatingFileHandler(
     filename='log/discord.log',
     encoding='utf-8',
