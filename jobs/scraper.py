@@ -3,7 +3,7 @@ import time
 from typing import Dict
 
 from enums import Seniority
-from jobs.linkekin import scrap_linkedin_jobs
+from jobs.linkedin import scrap_linkedin_jobs
 from jobs.nerdin import scrap_nerdin_jobs
 from jobs.thor import scrap_thor_jobs
 
