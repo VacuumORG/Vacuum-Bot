@@ -1,6 +1,7 @@
 import discord
 from discord import Interaction
 from discord.ext import commands
+from discord.ext.commands import Context
 from reactionmenu import ViewMenu, ViewButton
 
 
@@ -15,7 +16,7 @@ class Utils(commands.Cog):
         return [group_name, help_text]
 
     @discord.app_commands.command(name='commands')
-    async def commands(self, interaction: Interaction):
+    async def _commands(self, interaction: Interaction):
         hasHelper = lambda x: hasattr(x, 'get_helper') and callable(getattr(x, 'get_helper'))
         helpers = [cog.get_helper() for cog in self.bot.cogs.values() if hasHelper(cog)]
         helpers_dict = dict(helpers)
@@ -53,6 +54,10 @@ class Utils(commands.Cog):
         menu.add_buttons(buttons)
         menu.set_relay(update_page)
         await menu.start()
+
+    @commands.command()
+    async def vacuum_ping(self, ctx: Context) -> None:
+        await ctx.send(f"Pong!")
 
 
 async def setup(bot):
