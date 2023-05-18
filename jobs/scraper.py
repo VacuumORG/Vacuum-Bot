@@ -35,6 +35,11 @@ class Scraper:
         self.tasks: Dict[Seniority, asyncio.Task] = dict()
         self.buffer: Dict[Seniority, (float, dict)] = dict()
 
+    async def scrap_task(self, seniority_level):
+        jobs, errors = await scrap_jobs(seniority_level)
+        self.buffer[seniority_level] = [time.time(), jobs]
+        return jobs, errors
+
     async def scrap(self, seniority_level: Seniority):
         if seniority_level in self.tasks:
             _task = self.tasks[seniority_level]
@@ -43,10 +48,8 @@ class Scraper:
             buffer_time, buffer_content = self.buffer[seniority_level]
             if (time.time() - buffer_time) < TIME_TO_REFRESH_BUFFER:
                 return buffer_content, []
-        task = asyncio.create_task(scrap_jobs(seniority_level))
+        task = asyncio.create_task(self.scrap_task(seniority_level))
         self.tasks[seniority_level] = task
         await task
         jobs, errors = task.result()
-        self.buffer[seniority_level] = [time.time(), jobs]
-        del self.tasks[seniority_level]
         return jobs, errors
