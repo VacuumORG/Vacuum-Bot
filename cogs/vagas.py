@@ -50,7 +50,7 @@ class Vagas(commands.Cog):
     async def scrap_and_update_menu_with_jobs(self, seniority: Seniority, menu):
         jobs, errors = await self.scraper.scrap(seniority)
         for err in errors:
-            _log.error(f"Error on scraping process. Exception : {err}")
+            _log.error(f"Error on scraping process. Exception : {err}", exc_info=err)
         if not jobs:
             raise RuntimeError("Cannot retrieve any jobs from scraping process.")
         pages_title = f"Mostrando vagas de {seniority.name}"
@@ -96,7 +96,7 @@ class Vagas(commands.Cog):
     @vagas.error
     async def vagas_error(self, interaction: Interaction, error):
         await ViewMenu.stop_session(f'{interaction.id}')
-        _log.critical(f"Unexpected Internal Error: {error}")
+        _log.critical(f"Unexpected Internal Error: {error}", exc_info=error)
         await interaction.edit_original_response(
             content="Aconteceu algum erro enquanto tentava encontrar suas vagas. Por favor, relate o problema para algum moderador da Vacuum.",
             embed=None, view=None)
