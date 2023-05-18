@@ -1,3 +1,6 @@
+import shutil
+
+from discord import File
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -34,6 +37,16 @@ class Admin(commands.Cog):
             await ctx.send(f"Synced {synced_str} commands!")
         except Exception as e:
             await ctx.send(f"Cannot sync commands. Exception:\n{e}")
+
+    @commands.command()
+    async def get_log(self, ctx: Context) -> None:
+        """Get log files."""
+        try:
+            logs_file_path = shutil.make_archive('logs', 'zip', 'log')
+            discord_file = File(logs_file_path)
+            await ctx.send(f"Logs file!", file=discord_file)
+        except Exception as e:
+            print(e)
 
 
 async def setup(bot):
