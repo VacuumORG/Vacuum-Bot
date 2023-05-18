@@ -8,10 +8,8 @@ class Admin(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    def cog_check(self, ctx: Context) -> bool:
-        user_roles = ctx.author.roles
-        allowed_roles = ['ADM', 'Líderes']
-        return any([role.name in allowed_roles for role in user_roles])
+    async def cog_check(self, ctx: Context) -> bool:
+        return await self.bot.is_owner(ctx.author)
 
     @commands.command(name='reload')
     async def _reload(self, ctx: Context, *, module: str):
@@ -26,8 +24,6 @@ class Admin(commands.Cog):
             await ctx.send('\N{OK HAND SIGN}')
 
     @commands.command()
-    @commands.guild_only()
-    @commands.is_owner()
     async def sync(self, ctx: Context) -> None:
         """Sync the app commands tree with Discord."""
         try:
