@@ -6,12 +6,12 @@ from jobs.async_url_fetch import fetch_urls
 from jobs.utils import sanitize_job_title
 
 
-async def scrap_linkedin_jobs(search: str, cd: bool) -> List[dict | Exception]:
+async def scrap_linkedin_jobs(search: str, cd: bool, ssl_context) -> List[dict | Exception]:
     search = f"TI {search}"
     cd = '?f_AL=true&' if cd else ''
     url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&{cd}location=Brazil&position=1&pageNum=0&f_TPR=r2592000'
 
-    resp_content = await fetch_urls([url])
+    resp_content = await fetch_urls([url], ssl_context)
     if isinstance(resp_content[url], Exception):
         return [resp_content[url]]
     soup = BeautifulSoup(resp_content[url], 'html.parser')

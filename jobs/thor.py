@@ -14,7 +14,7 @@ def check_if_job_is_broken(job_soup):
     return 'min-height-180' in job_soup.attrs['class']
 
 
-async def scrap_thor_jobs(search: str) -> List[dict | Exception]:
+async def scrap_thor_jobs(search: str, ssl_context) -> List[dict | Exception]:
     """
     Args:
         search (str): this string can only receive 3 parameters which are 'Júnior'/'Pleno'/'Sênior'.
@@ -22,7 +22,7 @@ async def scrap_thor_jobs(search: str) -> List[dict | Exception]:
         List[dict]: returns a dictionary list with the keys 'Job: str'/'Apply: str'/'Techs: list of str'.
     """
     url = f'https://programathor.com.br/jobs-city/remoto?expertise={search}'
-    resp_content = await fetch_urls([url])
+    resp_content = await fetch_urls([url], ssl_context)
     if isinstance(resp_content[url], Exception):
         return [resp_content[url]]
     soup = BeautifulSoup(resp_content[url], 'html.parser')

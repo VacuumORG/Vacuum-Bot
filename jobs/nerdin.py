@@ -33,14 +33,14 @@ def check_job_age(job_soup):
     return True
 
 
-async def scrap_nerdin_jobs(seniority_level: Seniority) -> List[dict | Exception]:
+async def scrap_nerdin_jobs(seniority_level: Seniority, ssl_context) -> List[dict | Exception]:
     results = []
     page = 0
     loop = True
     while loop:
         urls = [create_search_url(seniority_level, page) for page in
                 range(page, page + PAGES_PER_SCRAPING_LOOP)]
-        responses = await fetch_urls(urls)
+        responses = await fetch_urls(urls, ssl_context)
 
         for content in responses.values():
             if isinstance(content, Exception):
