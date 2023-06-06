@@ -101,49 +101,6 @@ class Vagas(commands.Cog):
             content="Aconteceu algum erro enquanto tentava encontrar suas vagas. Por favor, relate o problema para algum moderador da Vacuum.",
             embed=None, view=None)
 
-    """ Vou deixar esse código comentado para implementações futuras"""
-    # @discord.app_commands.command(name='vagas')
-    # async def vagas(self, interaction: Interaction):
-    #     seniorities = ['Júnior', 'Pleno', 'Sênior']
-    #     techs = ["Python", "ReactJs", "NodeJs", "Java", "AWS"]
-    #     roles = ["Frontend", "Backend", "Tester", "Devops"]
-    #     empty_followup = ViewButton.Followup(details=ViewButton.Followup.set_caller_details(lambda: ...))
-    #
-    #     menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed)
-    #     menu.add_page(discord.Embed(title="Bem vindo ao Bot de Vagas da Vacuum!",
-    #                                 description="Para começar, selecione o nível de senioridade que deseja procurar.",
-    #                                 color=discord.Color.blurple()))
-    #     buttons = []
-    #
-    #     async def update_page(payload):
-    #         member = payload.member
-    #         _button: ViewButton = payload.button
-    #         selected_seniority = _button.label
-    #         new_page = discord.Embed(title=f"[{selected_seniority}]", description="Agora, selecione uma tecnologia.")
-    #         new_buttons = [ViewButton(label=tech, custom_id=ViewButton.ID_CALLER, followup=empty_followup) for tech in
-    #                        techs]
-    #         self.sections[member] = [selected_seniority]
-    #         print(self.sections)
-    #
-    #         def on_timeout(_):
-    #             if member in self.sections:
-    #                 print(f"Removing {member.name} from sections!")
-    #                 self.sections.pop(member)
-    #                 print(self.sections)
-    #
-    #         menu._on_timeout_details = on_timeout
-    #
-    #         await menu.update(new_pages=[new_page], new_buttons=new_buttons)
-    #
-    #     for seniority in seniorities:
-    #         button = ViewButton(label=seniority, custom_id=ViewButton.ID_CALLER, followup=empty_followup)
-    #         buttons.append(button)
-    #
-    #     menu.add_buttons(buttons)
-    #     menu.set_relay(update_page)
-    #
-    #     await menu.start()
-
 
 async def setup(bot):
     await bot.add_cog(Vagas(bot))
