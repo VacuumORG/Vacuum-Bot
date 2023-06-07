@@ -149,13 +149,14 @@ class Vagas(commands.Cog):
         Choice(name='Pleno', value=Seniority.Pleno.value),
         Choice(name='Sênior', value=Seniority.Senior.value),
     ])
-    async def vagas(self, interaction: Interaction, seniority: Optional[Seniority] = None, search: str = None):
+    async def vagas(self, interaction: Interaction, seniority: Optional[Seniority] = None,
+                    search: Optional[str] = None):
         """Pesquise por vagas utilizando nosso bot."""
         menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed, timeout=180, name=f'{interaction.id}')
 
         if seniority:
             menu.add_page(discord.Embed(title="Vacuum Vagas",
-                                        description=f"Segura um tico ai campeão, estou buscando as vagas de {seniority.name} ..."))
+                                        description=f"Segura um tico ai campeão, estou buscando as vagas de {search + ' ' if search else ''}{seniority.name} ..."))
             menu.add_button(ViewButton.end_session())
 
             await menu.start()
