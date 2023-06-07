@@ -15,6 +15,7 @@ _log = logging.getLogger('discord')
 
 BACK_BUTTON_LABEL = "◀️"
 NEXT_BUTTON_LABEL = "▶️"
+CANCEL_BUTTON_LABEL = "❌"
 
 
 class JobsPageBuilder:
@@ -82,7 +83,7 @@ class JobsSearchAssistant:
             new_buttons = []
             if self.buttons_page > 0:
                 new_buttons.append(self._create_button(emoji=BACK_BUTTON_LABEL))
-            new_buttons.append(self._create_button(label="Any"))
+            new_buttons.append(self._create_button(emoji=CANCEL_BUTTON_LABEL))
             lower_index = self.buttons_page * 22
             higher_index = (self.buttons_page + 1) * 22
             new_buttons.extend([self._create_button(label=str(keyword)) for
@@ -98,9 +99,10 @@ class JobsSearchAssistant:
                 if payload.button.emoji.name == NEXT_BUTTON_LABEL:
                     self.buttons_page += 1
                     return await self.setup_keyword_selection()
+                if payload.button.emoji.name == CANCEL_BUTTON_LABEL:
+                    return await self.goto_search()
             else:
-                if payload.button.label != "Any":
-                    self.keyword = payload.button.label
+                self.keyword = payload.button.label
                 await self.goto_search()
 
         self.menu.set_relay(keyword_selection_handler)
