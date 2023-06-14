@@ -1,5 +1,7 @@
 venv/
+.vacuum.env
 .env
 **/__pycache__/
 .idea/
 log/
+ffmpeg/

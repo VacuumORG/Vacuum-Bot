@@ -35,7 +35,8 @@ guild = discord.Object(id=guild_id)
 extensions = [
     'cogs.admin',
     'cogs.vagas',
-    'cogs.utils'
+    'cogs.utils',
+    'cogs.pomovacuum',
 ]
 
 
@@ -54,7 +55,7 @@ async def setup_extensions():
 
 
 async def setup_hook():
-    # bot.tree.copy_global_to(guild=guild)
+    bot.tree.copy_global_to(guild=guild)
     await bot.tree.sync(guild=guild)
 
 
