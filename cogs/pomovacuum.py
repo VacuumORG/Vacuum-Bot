@@ -2,9 +2,10 @@ import importlib
 from typing import Optional
 
 import discord
-from discord import Interaction, VoiceChannel
+from discord import Interaction
 from discord.ext import commands
 
+import pomodoro.checkers
 import pomodoro.models
 import pomodoro.session
 import pomodoro.ui
@@ -12,18 +13,21 @@ import pomodoro.ui
 importlib.reload(pomodoro.models)
 importlib.reload(pomodoro.session)
 importlib.reload(pomodoro.ui)
+importlib.reload(pomodoro.checkers)
 
 from pomodoro.ui import session_start_view, session_info_view, all_sessions_info_view, help_view, close_session_view
 from pomodoro.session import PomodoroSettings, PomodoroSession
 from pomodoro.models import AlarmOptions
+from pomodoro.checkers import has_session, is_guild, is_in_voice_channel, user_channel_do_not_have_session, \
+    is_session_owner, is_in_voice_channel_chat
 
 
 class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomodoro'):
     """Pomodoro bot"""
+    sessions = dict()
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.sessions = dict()
         self.vc = None
 
     def close_session(self, channel):
@@ -39,84 +43,69 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
                                    n_breaks='Número de intervalos até intervalo longo (padrão 3)',
                                    alarm_sound='Tipo de alarme',
                                    use_voices='Utilizar voz nas notificações (padrão False)')
+    @user_channel_do_not_have_session(sessions=sessions)
+    @is_in_voice_channel()
+    @is_guild()
     async def _start(self, interaction: Interaction, work_time: Optional[int] = 25,
                      break_time: Optional[int] = 5, long_break_time: Optional[int] = 15,
                      n_breaks: Optional[int] = 3, alarm_sound: Optional[AlarmOptions] = AlarmOptions.Digital,
                      use_voices: Optional[bool] = False):
         settings = PomodoroSettings(work_time=work_time, break_time=break_time, long_break_time=long_break_time,
                                     n_breaks=n_breaks, alarm_sound=alarm_sound, use_voices=use_voices)
-        if isinstance(interaction.user, discord.Member):
-            user_voice = interaction.user.voice
-            if not user_voice or not isinstance(user_voice.channel, VoiceChannel):
-                return await interaction.response.send_message(
-                    "Você precisa estar em um canal de voz para criar uma sessão de pomodoro")
-            if user_voice.channel in self.sessions:
-                return await interaction.response.send_message("Esse canal já possui uma sessão de pomodoro ativa!")
-            session = PomodoroSession(self.bot, interaction, settings)
-            session.on_empty_channel = self.close_session
-            self.sessions[user_voice.channel] = session
-            await session.start()
+        channel = interaction.user.voice.channel
+        session = PomodoroSession(self.bot, interaction, settings)
+        session.on_empty_channel = self.close_session
+        self.sessions[channel] = session
+        await session.start()
 
-            await interaction.response.send_message(**session_start_view(settings))
+        await interaction.response.send_message(**session_start_view(settings))
 
     @discord.app_commands.command(name='pular',
                                   description='Pula o estado atual do pomodoro. Deve ser utilizado no canal de voz da sessão.')
+    @is_session_owner(sessions=sessions)
+    @has_session(sessions=sessions)
+    @is_in_voice_channel_chat()
+    @is_guild()
     async def skip(self, interaction: Interaction):
-        if isinstance(interaction.user, discord.Member):
-            user_channel = interaction.user.voice.channel
-            if interaction.channel_id != user_channel.id:
-                return await interaction.response.send_message(content="Comando exclusivo para chats de canais de voz",
-                                                               delete_after=5)
-            if user_channel not in self.sessions:
-                return await interaction.response.send_message("Não há sessão de pomodoro ativa para este canal!")
-            session = self.sessions[user_channel]
-            return await session.skip(interaction)
+        user_channel = interaction.user.voice.channel
+        session = self.sessions[user_channel]
+        return await session.skip(interaction)
 
     @discord.app_commands.command(
         description='Exibe as informações do pomodoro. Deve ser utilizado no canal de voz da sessão.')
+    @has_session(sessions=sessions)
+    @is_in_voice_channel_chat()
+    @is_guild()
     async def info(self, interaction: Interaction):
-        if isinstance(interaction.user, discord.Member):
-            user_channel = interaction.user.voice.channel
-            if not isinstance(interaction.channel, VoiceChannel):
-                return await interaction.response.send_message(content="Comando exclusivo para chats de canais de voz",
-                                                               delete_after=5)
-            if interaction.channel not in self.sessions:
-                return await interaction.response.send_message(
-                    content="Não há sessão de pomodoro ativa para este canal!",
-                    delete_after=5)
-            session = self.sessions[user_channel]
-            await interaction.response.send_message(**session_info_view(session))
+        user_channel = interaction.user.voice.channel
+        session = self.sessions[user_channel]
+        await interaction.response.send_message(**session_info_view(session))
 
     @discord.app_commands.command(name='sessões', description='Exibe todas as sessões ativas de pomodoro.')
-    async def sessions(self, interaction: Interaction):
-        if isinstance(interaction.user, discord.Member):
-            await interaction.response.send_message(**all_sessions_info_view(list(self.sessions.values())))
+    @is_guild()
+    async def _sessions(self, interaction: Interaction):
+        await interaction.response.send_message(**all_sessions_info_view(list(self.sessions.values())))
 
     @discord.app_commands.command(name='ajuda', description='Mais detalhes sobre os comandos.')
+    @is_guild()
     async def help(self, interaction: Interaction):
-        if isinstance(interaction.user, discord.Member):
-            await interaction.response.send_message(**help_view())
+        await interaction.response.send_message(**help_view())
 
     @discord.app_commands.command(name='encerrar',
                                   description='Encerra a sessão de pomodoro. Deve ser utilizado no canal de voz da sessão.')
+    @is_session_owner(sessions=sessions)
+    @has_session(sessions=sessions)
+    @is_in_voice_channel_chat()
+    @is_guild()
     async def end(self, interaction: Interaction):
-        if isinstance(interaction.user, discord.Member):
-            if not isinstance(interaction.channel, VoiceChannel):
-                return await interaction.response.send_message(content="Comando exclusivo para chats de canais de voz",
-                                                               delete_after=5)
-            if interaction.channel not in self.sessions:
-                return await interaction.response.send_message(
-                    content="Não há sessão de pomodoro ativa para este canal",
-                    delete_after=5)
+        async def ok_callback(new_view):
+            self.close_session(interaction.channel)
+            await interaction.edit_original_response(**new_view)
 
-            async def ok_callback(new_view):
-                self.close_session(interaction.channel)
-                await interaction.edit_original_response(**new_view)
+        async def cancel_callback():
+            await interaction.delete_original_response()
 
-            async def cancel_callback():
-                await interaction.delete_original_response()
-
-            await interaction.response.send_message(**close_session_view(ok_callback, cancel_callback))
+        await interaction.response.send_message(**close_session_view(ok_callback, cancel_callback))
 
     def get_helper(self):
         return ["Pomovacuum", help_view()['embed']]
