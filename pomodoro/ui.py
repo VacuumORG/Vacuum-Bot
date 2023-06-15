@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Callable, Awaitable
 
-from discord import Embed, Colour
+from discord import Embed, Colour, ButtonStyle, Interaction
+from discord.ui import View, Button
 
 from pomodoro.session import PomodoroSettings, PomodoroSession, PomodoroState
 
@@ -88,3 +89,24 @@ def help_view():
                     value="Apresenta todas as sessões de pomodoro ativas.", inline=False)
 
     return {'embed': embed}
+
+
+def close_session_view(ok_callback: Callable[[dict], Awaitable], cancel_callback: Callable[[], Awaitable]):
+    embed = Embed(title=":tomato: PomoVacuum", description="Deseja encerrar a sessão de pomodoro?", colour=COLOUR)
+    view = View()
+    ok_bt = Button(label="Sim", style=ButtonStyle.danger)
+    cancel_bt = Button(label="Cancelar", style=ButtonStyle.secondary)
+
+    async def __ok_callback(interaction: Interaction):
+        await interaction.response.defer()
+        closed_view = {'embed': None, 'view': None, 'content': ":tomato: Sessão encerrada!"}
+        await ok_callback(closed_view)
+
+    async def __cancel_callback(interaction: Interaction):
+        await interaction.response.defer()
+        await cancel_callback()
+
+    ok_bt.callback = __ok_callback
+    cancel_bt.callback = __cancel_callback
+    view.add_item(ok_bt).add_item(cancel_bt)
+    return {'embed': embed, 'view': view}

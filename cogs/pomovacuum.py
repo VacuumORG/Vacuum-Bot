@@ -13,7 +13,7 @@ importlib.reload(pomodoro.models)
 importlib.reload(pomodoro.session)
 importlib.reload(pomodoro.ui)
 
-from pomodoro.ui import session_start_view, session_info_view, all_sessions_info_view, help_view
+from pomodoro.ui import session_start_view, session_info_view, all_sessions_info_view, help_view, close_session_view
 from pomodoro.session import PomodoroSettings, PomodoroSession
 from pomodoro.models import AlarmOptions
 
@@ -96,6 +96,27 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
     async def help(self, interaction: Interaction):
         if isinstance(interaction.user, discord.Member):
             await interaction.response.send_message(**help_view())
+
+    @discord.app_commands.command(name='encerrar',
+                                  description='Encerra a sessão de pomodoro. Deve ser utilizado no canal de voz da sessão.')
+    async def end(self, interaction: Interaction):
+        if isinstance(interaction.user, discord.Member):
+            if not isinstance(interaction.channel, VoiceChannel):
+                return await interaction.response.send_message(content="Comando exclusivo para chats de canais de voz",
+                                                               delete_after=5)
+            if interaction.channel not in self.sessions:
+                return await interaction.response.send_message(
+                    content="Não há sessão de pomodoro ativa para este canal",
+                    delete_after=5)
+
+            async def ok_callback(new_view):
+                self.close_session(interaction.channel)
+                await interaction.edit_original_response(**new_view)
+
+            async def cancel_callback():
+                await interaction.delete_original_response()
+
+            await interaction.response.send_message(**close_session_view(ok_callback, cancel_callback))
 
     def get_helper(self):
         return ["Pomovacuum", help_view()['embed']]
