@@ -96,6 +96,9 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
         if isinstance(interaction.user, discord.Member):
             await interaction.response.send_message(**help_view())
 
+    def get_helper(self):
+        return ["Pomovacuum", help_view()['embed']]
+
 
 async def setup(bot):
     await bot.add_cog(Pomodoro(bot))

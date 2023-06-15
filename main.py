@@ -35,7 +35,7 @@ guild = discord.Object(id=guild_id)
 extensions = [
     'cogs.admin',
     'cogs.vagas',
-    'cogs.utils',
+    'cogs.bot_commands',
     'cogs.pomovacuum',
 ]
 

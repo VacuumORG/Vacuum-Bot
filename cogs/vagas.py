@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import discord
-from discord import Interaction
+from discord import Interaction, Embed, Colour
 from discord.ext import commands
 from reactionmenu import ViewMenu, ViewButton
 
@@ -42,10 +42,15 @@ class Vagas(commands.Cog):
         self.scraper = Scraper()
 
     def get_helper(self):
-        help_text = """• /vagas [Junior|Pleno|Senior] - Pesquise por vagas utilizando parametros de busca.
-        """
-        group_name = "Vagas"
-        return [group_name, help_text]
+        embed = Embed(title=":computer: Vagas",
+                      description="Dentro da Vacuum você pode pesquisar por vagas diretamente pelo discord "
+                                  "utilizando nosso bot. \n\n", colour=Colour.blue())
+        command_desc = "Retorna vagas obtidas no Linkedin, Nerdin e Programathor utilizando os parametros de filtragem:\n" \
+                       "- Júnior|Pleno|Sênior : Filtra pela senioridade escolhida." \
+                       "\n\n" \
+                       "O comando pode ser utilizado sem parâmetros e o bot irá auxiliar na criação da pesquisa."
+        embed.add_field(name="/vagas", value=command_desc)
+        return ["Vagas", embed]
 
     async def scrap_and_update_menu_with_jobs(self, seniority: Seniority, menu):
         jobs, errors = await self.scraper.scrap(seniority)
@@ -100,49 +105,6 @@ class Vagas(commands.Cog):
         await interaction.edit_original_response(
             content="Aconteceu algum erro enquanto tentava encontrar suas vagas. Por favor, relate o problema para algum moderador da Vacuum.",
             embed=None, view=None)
-
-    """ Vou deixar esse código comentado para implementações futuras"""
-    # @discord.app_commands.command(name='vagas')
-    # async def vagas(self, interaction: Interaction):
-    #     seniorities = ['Júnior', 'Pleno', 'Sênior']
-    #     techs = ["Python", "ReactJs", "NodeJs", "Java", "AWS"]
-    #     roles = ["Frontend", "Backend", "Tester", "Devops"]
-    #     empty_followup = ViewButton.Followup(details=ViewButton.Followup.set_caller_details(lambda: ...))
-    #
-    #     menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed)
-    #     menu.add_page(discord.Embed(title="Bem vindo ao Bot de Vagas da Vacuum!",
-    #                                 description="Para começar, selecione o nível de senioridade que deseja procurar.",
-    #                                 color=discord.Color.blurple()))
-    #     buttons = []
-    #
-    #     async def update_page(payload):
-    #         member = payload.member
-    #         _button: ViewButton = payload.button
-    #         selected_seniority = _button.label
-    #         new_page = discord.Embed(title=f"[{selected_seniority}]", description="Agora, selecione uma tecnologia.")
-    #         new_buttons = [ViewButton(label=tech, custom_id=ViewButton.ID_CALLER, followup=empty_followup) for tech in
-    #                        techs]
-    #         self.sections[member] = [selected_seniority]
-    #         print(self.sections)
-    #
-    #         def on_timeout(_):
-    #             if member in self.sections:
-    #                 print(f"Removing {member.name} from sections!")
-    #                 self.sections.pop(member)
-    #                 print(self.sections)
-    #
-    #         menu._on_timeout_details = on_timeout
-    #
-    #         await menu.update(new_pages=[new_page], new_buttons=new_buttons)
-    #
-    #     for seniority in seniorities:
-    #         button = ViewButton(label=seniority, custom_id=ViewButton.ID_CALLER, followup=empty_followup)
-    #         buttons.append(button)
-    #
-    #     menu.add_buttons(buttons)
-    #     menu.set_relay(update_page)
-    #
-    #     await menu.start()
 
 
 async def setup(bot):
