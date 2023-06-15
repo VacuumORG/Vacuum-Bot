@@ -34,7 +34,7 @@ class PomodoroSession:
         self.remaining_time = None
         self.started_at = None
         self.created_at = None
-        self.finish_session_callback = None
+        self.on_empty_channel = None
         self._next_state_timestamp = None
 
     async def play_alarm(self):
@@ -120,7 +120,7 @@ class PomodoroSession:
 
     @tasks.loop(seconds=1)
     async def update(self):
-        await self.check_channel()
+        self.check_channel()
         if self.paused:
             return
         now = datetime.now()
@@ -129,8 +129,10 @@ class PomodoroSession:
             self.update_timestamp()
             await self.notify_channel()
 
-    async def check_channel(self):
+    def check_channel(self):
         if not self.channel.members:
-            self.update.stop()
-            if callable(self.finish_session_callback):
-                await self.finish_session_callback(self.channel)
+            if callable(self.on_empty_channel):
+                self.on_empty_channel(self.channel)
+
+    def close(self):
+        self.update.stop()

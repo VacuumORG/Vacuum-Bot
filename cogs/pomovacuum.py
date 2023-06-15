@@ -26,9 +26,10 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
         self.sessions = dict()
         self.vc = None
 
-    async def finish_session_callback(self, channel):
+    def close_session(self, channel):
         if channel in self.sessions:
-            self.sessions.pop(channel)
+            session = self.sessions.pop(channel)
+            session.close()
 
     @discord.app_commands.command(name='start',
                                   description='Inicia uma nova sessão de pomodoro. Deve ser utilizado estando em um chat de voz.')
@@ -52,7 +53,7 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
             if user_voice.channel in self.sessions:
                 return await interaction.response.send_message("Esse canal já possui uma sessão de pomodoro ativa!")
             session = PomodoroSession(self.bot, interaction, settings)
-            session.finish_session_callback = self.finish_session_callback
+            session.on_empty_channel = self.close_session
             self.sessions[user_voice.channel] = session
             await session.start()
 
