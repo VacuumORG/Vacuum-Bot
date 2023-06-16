@@ -79,14 +79,18 @@ def help_view():
     embed.add_field(name=":track_next:   /pomodoro pular",
                     value="Pula o estado do pomodoro. "
                           "Caso esteja em 'Trabalho' vai para 'Intervalo' ou 'Intervalo Longo' e vice versa. "
-                          "O comando só é aceito dentro do chat de texto do canal de voz com uma sessão de pomodoro ativa.",
+                          "O comando só é aceito dentro do chat do canal de voz com uma sessão de pomodoro ativa.",
                     inline=False)
     embed.add_field(name=":information_source:   /pomodoro info",
                     value="Apresenta as informações da sessão de pomodoro. "
-                          "O comando só é aceito dentro do chat de texto do canal de voz com uma sessão de pomodoro ativa.",
+                          "O comando só é aceito dentro do chat do canal de voz com uma sessão de pomodoro ativa.",
                     inline=False)
     embed.add_field(name=":koko:   /pomodoro sessões",
                     value="Apresenta todas as sessões de pomodoro ativas.", inline=False)
+    embed.add_field(name=":regional_indicator_x:   /pomodoro encerrar",
+                    value="Encerra a sessão de pomodoro do canal."
+                          "O comando só é aceito dentro do chat do canal de voz com uma sessão de pomodoro ativa.",
+                    inline=False)
 
     return {'embed': embed}
 
