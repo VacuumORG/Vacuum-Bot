@@ -1,3 +1,4 @@
+import asyncio
 import math
 import os
 from datetime import datetime, timedelta
@@ -22,6 +23,8 @@ def create_voice_sound_path(state: PomodoroState):
 
 
 class PomodoroSession:
+    voice_lock = asyncio.Lock()
+
     def __init__(self, bot: commands.Bot, interaction: Interaction, settings: PomodoroSettings):
         self.interaction = interaction
         self.bot = bot
@@ -38,10 +41,15 @@ class PomodoroSession:
         self._next_state_timestamp = None
 
     async def play_alarm(self):
+        await self.voice_lock.acquire()
+
         vc = await self.channel.connect()
 
         async def after_play():
-            await vc.disconnect()
+            try:
+                await vc.disconnect()
+            finally:
+                self.voice_lock.release()
 
         def disconnect(error):
             self.bot.loop.create_task(after_play())
