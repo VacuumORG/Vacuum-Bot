@@ -3,12 +3,13 @@ from typing import Optional
 
 import discord
 from discord import Interaction
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import pomodoro.checkers
 import pomodoro.models
 import pomodoro.session
 import pomodoro.ui
+from utils.sound_controller import SoundController
 
 importlib.reload(pomodoro.models)
 importlib.reload(pomodoro.session)
@@ -28,12 +29,21 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.vc = None
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        SoundController(self.bot).start()
+        self.disconnect_if_no_session.start()
 
     def close_session(self, channel):
         if channel in self.sessions:
             session = self.sessions.pop(channel)
             session.close()
+
+    @tasks.loop(seconds=1)
+    async def disconnect_if_no_session(self):
+        if not self.sessions:
+            SoundController().disconnect()
 
     @discord.app_commands.command(name='start',
                                   description='Inicia uma nova sessão de pomodoro. Deve ser utilizado estando em um chat de voz.')

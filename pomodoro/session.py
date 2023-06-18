@@ -3,11 +3,11 @@ import math
 import os
 from datetime import datetime, timedelta
 
-import discord
 from discord import Interaction
 from discord.ext import commands, tasks
 
 from pomodoro.models import PomodoroState, PomodoroSettings, AlarmOptions
+from utils.sound_controller import SoundController
 
 
 def plural(quantity: int):
@@ -41,29 +41,10 @@ class PomodoroSession:
         self._next_state_timestamp = None
 
     async def play_alarm(self):
-        await self.voice_lock.acquire()
-
-        vc = await self.channel.connect()
-
-        async def after_play():
-            try:
-                await vc.disconnect()
-            finally:
-                self.voice_lock.release()
-
-        def disconnect(error):
-            self.bot.loop.create_task(after_play())
-
-        def play_voice(error):
-            if not self.settings.use_voices:
-                return disconnect(error)
-            vc.play(
-                discord.FFmpegPCMAudio(create_voice_sound_path(self.state)),
-                after=disconnect)
-
-        vc.play(
-            discord.FFmpegPCMAudio(create_alarm_sound_path(self.settings.alarm_sound)),
-            after=play_voice)
+        controller = SoundController()
+        await controller.play(create_alarm_sound_path(self.settings.alarm_sound), self.channel)
+        if self.settings.use_voices:
+            await controller.play(create_voice_sound_path(self.state), self.channel)
 
     async def notify_channel(self):
         await self.play_alarm()
@@ -138,7 +119,7 @@ class PomodoroSession:
             await self.notify_channel()
 
     def check_channel(self):
-        if not self.channel.members:
+        if not self.channel.members or self.channel.members == [self.bot.user]:
             if callable(self.on_empty_channel):
                 self.on_empty_channel(self.channel)
 
