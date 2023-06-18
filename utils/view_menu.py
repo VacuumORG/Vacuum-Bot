@@ -8,7 +8,7 @@ PageType: TypeAlias = tuple[str, Embed | List[Embed]]
 
 
 class ViewMenu:
-    def __init__(self, interaction: Interaction, pages: List[PageType]):
+    def __init__(self, interaction: Interaction, pages: List[PageType], all_can_click=False):
         self.interaction = interaction
         self.pages = pages
         self._page = 0
@@ -16,8 +16,12 @@ class ViewMenu:
         self._view = MenuButtons(buttons=[{'label': page[0]} for page in self.pages])
         self._view.callback = self.__view_callback
         self._view.update_callback = self.update
+        self.all_can_click = all_can_click
+        self._owner = self.interaction.user
 
     async def __view_callback(self, index, interaction):
+        if not self.all_can_click and interaction.user != self._owner:
+            return
         self._page = index
         self._actual_page = self.pages[index]
         await self.update()
