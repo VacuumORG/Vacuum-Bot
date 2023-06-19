@@ -5,20 +5,20 @@ from typing import Dict
 
 import certifi
 
-from enums import Seniority
+from enums import JobLevel
 from jobs.linkedin import scrap_linkedin_jobs
 from jobs.nerdin import scrap_nerdin_jobs
 from jobs.thor import scrap_thor_jobs
 
-SENIORITY_LEVEL_MAP = {Seniority.Junior: "Júnior", Seniority.Pleno: "Pleno", Seniority.Senior: "Sênior"}
+JOB_LEVEL_MAP = {JobLevel.Junior: "Júnior", JobLevel.Pleno: "Pleno", JobLevel.Senior: "Sênior"}
 TIME_TO_REFRESH_BUFFER = 60 * 10  # 10 min
 
 
-async def scrap_jobs(seniority_level: Seniority, ssl_context):
-    seniority_str = SENIORITY_LEVEL_MAP[seniority_level]
-    linkedin = asyncio.create_task(scrap_linkedin_jobs(seniority_str, True, ssl_context))
-    nerdin = asyncio.create_task(scrap_nerdin_jobs(seniority_level, ssl_context))
-    thor = asyncio.create_task(scrap_thor_jobs(seniority_str, ssl_context))
+async def scrap_jobs(job_level: JobLevel, ssl_context):
+    job_level_str = JOB_LEVEL_MAP[job_level]
+    linkedin = asyncio.create_task(scrap_linkedin_jobs(job_level_str, True, ssl_context))
+    nerdin = asyncio.create_task(scrap_nerdin_jobs(job_level, ssl_context))
+    thor = asyncio.create_task(scrap_thor_jobs(job_level_str, ssl_context))
 
     results = await asyncio.gather(linkedin, nerdin, thor, return_exceptions=True)
     flat_results = []
@@ -35,25 +35,25 @@ async def scrap_jobs(seniority_level: Seniority, ssl_context):
 
 class Scraper:
     def __init__(self):
-        self.tasks: Dict[Seniority, asyncio.Task] = dict()
-        self.buffer: Dict[Seniority, (float, dict)] = dict()
+        self.tasks: Dict[JobLevel, asyncio.Task] = dict()
+        self.buffer: Dict[JobLevel, (float, dict)] = dict()
         self.ssl_context = ssl.create_default_context(cafile=certifi.where())
 
-    async def scrap_task(self, seniority_level):
-        jobs, errors = await scrap_jobs(seniority_level, self.ssl_context)
-        self.buffer[seniority_level] = [time.time(), jobs]
+    async def scrap_task(self, job_level):
+        jobs, errors = await scrap_jobs(job_level, self.ssl_context)
+        self.buffer[job_level] = [time.time(), jobs]
         return jobs, errors
 
-    async def scrap(self, seniority_level: Seniority):
-        if seniority_level in self.tasks:
-            _task = self.tasks[seniority_level]
+    async def scrap(self, job_level: JobLevel):
+        if job_level in self.tasks:
+            _task = self.tasks[job_level]
             await _task
-        if seniority_level in self.buffer:
-            buffer_time, buffer_content = self.buffer[seniority_level]
+        if job_level in self.buffer:
+            buffer_time, buffer_content = self.buffer[job_level]
             if (time.time() - buffer_time) < TIME_TO_REFRESH_BUFFER:
                 return buffer_content, []
-        task = asyncio.create_task(self.scrap_task(seniority_level))
-        self.tasks[seniority_level] = task
+        task = asyncio.create_task(self.scrap_task(job_level))
+        self.tasks[job_level] = task
         await task
         jobs, errors = task.result()
         return jobs, errors

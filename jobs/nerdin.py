@@ -2,22 +2,22 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
-from enums import Seniority
+from enums import JobLevel
 from jobs.async_url_fetch import fetch_urls
 from jobs.utils import sanitize_job_title
 
 ## Temporary map
-SENIORITY_MAP = {Seniority.Junior: 3, Seniority.Senior: 1, Seniority.Pleno: 2}
+JOB_LEVEL_MAP = {JobLevel.Junior: 3, JobLevel.Senior: 1, JobLevel.Pleno: 2}
 PAGES_PER_SCRAPING_LOOP = 4
 MAX_JOB_OPEN_DAYS = 30 * 6  # 6 months
 
 
-def create_search_url(seniority_level: Seniority, page=0):
+def create_search_url(job_level: JobLevel, page=0):
     base_url = "https://nerdin.com.br/func/FVagaListar.php?"
     home_office = 'UF=HO&'
-    seniority = f'CodigoNivel={SENIORITY_MAP[seniority_level]}&'
+    job_level = f'CodigoNivel={JOB_LEVEL_MAP[job_level]}&'
     pagination = f'CodigoVagaProxima={(page - 1) * 50}&' if page else ''
-    return base_url + home_office + seniority + pagination
+    return base_url + home_office + job_level + pagination
 
 
 def check_job_age(job_soup):
@@ -33,12 +33,12 @@ def check_job_age(job_soup):
     return True
 
 
-async def scrap_nerdin_jobs(seniority_level: Seniority, ssl_context) -> List[dict | Exception]:
+async def scrap_nerdin_jobs(job_level: JobLevel, ssl_context) -> List[dict | Exception]:
     results = []
     page = 0
     loop = True
     while loop:
-        urls = [create_search_url(seniority_level, page) for page in
+        urls = [create_search_url(job_level, page) for page in
                 range(page, page + PAGES_PER_SCRAPING_LOOP)]
         responses = await fetch_urls(urls, ssl_context)
 

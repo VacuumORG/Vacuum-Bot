@@ -2,7 +2,7 @@ import discord
 from discord import Interaction
 
 from consts import JOBS_SEARCH_KEYWORDS
-from enums import Seniority
+from enums import JobLevel
 from utils.menu_buttons import MenuButtons
 
 
@@ -11,10 +11,10 @@ class SearchBuilderView:
         self.interaction = interaction
         self.callback = callback
         self._keywords = list(JOBS_SEARCH_KEYWORDS.keys())
-        self._job_levels = [level for level in Seniority]
+        self._job_levels = [level for level in JobLevel]
         self._embed: discord.Embed | None = None
         self._view: MenuButtons | None = None
-        self.level: Seniority | None = None
+        self.level: JobLevel | None = None
         self.keyword = None
 
     async def _job_level_selection_handler(self, index, interaction):

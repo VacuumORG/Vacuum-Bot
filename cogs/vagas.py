@@ -10,7 +10,7 @@ from reactionmenu import ViewMenu, ViewButton
 
 import jobs.scraper
 import jobs.ui
-from enums import Seniority
+from enums import JobLevel
 
 importlib.reload(jobs.scraper)
 importlib.reload(jobs.ui)
@@ -56,14 +56,14 @@ class Vagas(commands.Cog):
         group_name = "Vagas"
         return [group_name, help_text]
 
-    async def scrap_and_update_menu_with_jobs(self, seniority: Seniority, menu, search):
-        # jobs, errors = await self.scraper.scrap(seniority, search) // Add later
-        jobs, errors = await self.scraper.scrap(seniority)
+    async def scrap_and_update_menu_with_jobs(self, job_level: JobLevel, menu, search):
+        # jobs, errors = await self.scraper.scrap(job_level, search) // Add later
+        jobs, errors = await self.scraper.scrap(job_level)
         for err in errors:
             _log.error(f"Error on scraping process. Exception : {err}", exc_info=err)
         if not jobs:
             raise RuntimeError("Cannot retrieve any jobs from scraping process.")
-        pages_title = f"Mostrando vagas de {search + ' ' if search else ''}{seniority.name}"
+        pages_title = f"Mostrando vagas de {search + ' ' if search else ''}{job_level.name}"
         pages_builder = JobsPageBuilder(pages_title)
         for job in jobs:
             pages_builder.add_line(f"[{job['Job']}]({job['Apply']})")
@@ -71,35 +71,35 @@ class Vagas(commands.Cog):
         await menu.update(new_pages=pages, new_buttons=[ViewButton.back(), ViewButton.next(), ViewButton.end_session()])
 
     @discord.app_commands.command(name='vagas')
-    @discord.app_commands.rename(seniority='senioridade', search='pesquisa')
-    @discord.app_commands.describe(seniority="Escolha a senioridade da vaga.",
+    @discord.app_commands.rename(job_level='senioridade', search='pesquisa')
+    @discord.app_commands.describe(job_level="Escolha a senioridade da vaga.",
                                    search="Defina um parâmetro de pesquisa. Ex: python, front-end, QA.")
-    @discord.app_commands.choices(seniority=[
-        Choice(name='Júnior', value=Seniority.Junior.value),
-        Choice(name='Pleno', value=Seniority.Pleno.value),
-        Choice(name='Sênior', value=Seniority.Senior.value),
+    @discord.app_commands.choices(job_level=[
+        Choice(name='Júnior', value=JobLevel.Junior.value),
+        Choice(name='Pleno', value=JobLevel.Pleno.value),
+        Choice(name='Sênior', value=JobLevel.Senior.value),
     ])
-    async def vagas(self, interaction: Interaction, seniority: Optional[Seniority] = None,
+    async def vagas(self, interaction: Interaction, job_level: Optional[JobLevel] = None,
                     search: Optional[str] = None):
         """Pesquise por vagas utilizando nosso bot."""
         menu = ViewMenu(interaction, menu_type=ViewMenu.TypeEmbed, timeout=180, name=f'{interaction.id}')
 
-        if seniority:
+        if job_level:
             menu.add_page(discord.Embed(title="Vacuum Vagas",
-                                        description=f"Segura um tico ai campeão, estou buscando as vagas de {search + ' ' if search else ''}{seniority.name} ..."))
+                                        description=f"Segura um tico ai campeão, estou buscando as vagas de {search + ' ' if search else ''}{job_level.name} ..."))
             menu.add_button(ViewButton.end_session())
 
             await menu.start()
-            await self.scrap_and_update_menu_with_jobs(seniority, menu, search)
+            await self.scrap_and_update_menu_with_jobs(job_level, menu, search)
         else:
-            async def assistant_callback(seniority, search):
-                print(seniority, search)
+            async def assistant_callback(job_level, search):
+                print(job_level, search)
                 new_page = discord.Embed(title="Vacuum Vagas",
-                                         description=f"Segura um tico ai campeão, estou buscando as vagas de {search + ' ' if search else ''}{seniority.name} ...")
+                                         description=f"Segura um tico ai campeão, estou buscando as vagas de {search + ' ' if search else ''}{job_level.name} ...")
                 new_buttons = [ViewButton.end_session()]
 
                 await menu.update(new_pages=[new_page], new_buttons=new_buttons)
-                await self.scrap_and_update_menu_with_jobs(seniority, menu, search)
+                await self.scrap_and_update_menu_with_jobs(job_level, menu, search)
 
             assistant = SearchBuilderView(interaction, assistant_callback)
             await assistant.start()
