@@ -1,3 +1,4 @@
+import importlib
 import logging
 from typing import Optional
 
@@ -7,15 +8,17 @@ from discord.app_commands import Choice
 from discord.ext import commands
 from reactionmenu import ViewMenu, ViewButton
 
-from consts import JOBS_SEARCH_KEYWORDS
+import jobs.scraper
+import jobs.ui
 from enums import Seniority
+
+importlib.reload(jobs.scraper)
+importlib.reload(jobs.ui)
+
 from jobs.scraper import Scraper
+from jobs.ui import SearchBuilderView
 
 _log = logging.getLogger('discord')
-
-BACK_BUTTON_LABEL = "◀️"
-NEXT_BUTTON_LABEL = "▶️"
-CANCEL_BUTTON_LABEL = "❌"
 
 
 class JobsPageBuilder:
@@ -38,81 +41,6 @@ class JobsPageBuilder:
         pages = [*self._pages, last_page]
         self._pages = []
         return pages
-
-
-class JobsSearchAssistant:
-    def __init__(self, menu: ViewMenu, callback):
-        self.menu = menu
-        self.callback = callback
-        self._empty_follow_up = ViewButton.Followup(details=ViewButton.Followup.set_caller_details(lambda: ...))
-        self.buttons_page = 0
-        self.seniority: Seniority | None = None
-        self.keyword = None
-        self.setup_job_level_selection()
-
-    def _create_button(self, **kwargs):
-        return ViewButton(**kwargs, custom_id=ViewButton.ID_CALLER,
-                          followup=self._empty_follow_up)
-
-    def setup_job_level_selection(self):
-        self.menu.add_page(discord.Embed(title="Vacuum Vagas",
-                                         description="Bem vindo ao bot de vagas da Vacuum!\nSelecione o nível de senioridade que deseja procurar."))
-        empty_followup = ViewButton.Followup(details=ViewButton.Followup.set_caller_details(lambda: ...))
-
-        buttons = [ViewButton(label=str(level.name), custom_id=ViewButton.ID_CALLER, followup=empty_followup) for level
-                   in Seniority]
-        self.menu.add_buttons(buttons)
-
-        async def job_level_handler(payload):
-            self.menu.remove_relay()
-            selected_seniority = payload.button.label
-            self.seniority = Seniority[selected_seniority]
-            await self.setup_keyword_selection()
-
-        self.menu.set_relay(job_level_handler)
-
-    async def setup_keyword_selection(self):
-        new_page = discord.Embed(title="Vacuum Vagas",
-                                 description=f"[{self.seniority.name}] Caso queira, adicione uma palavra-chave na pesquisa.")
-
-        if len(JOBS_SEARCH_KEYWORDS) <= 25:
-            new_buttons = [
-                ViewButton(label=str(keyword), custom_id=ViewButton.ID_CALLER, followup=self._empty_follow_up) for
-                keyword in JOBS_SEARCH_KEYWORDS.keys()]
-        else:
-            new_buttons = []
-            if self.buttons_page > 0:
-                new_buttons.append(self._create_button(emoji=BACK_BUTTON_LABEL))
-            new_buttons.append(self._create_button(emoji=CANCEL_BUTTON_LABEL))
-            lower_index = self.buttons_page * 22
-            higher_index = (self.buttons_page + 1) * 22
-            new_buttons.extend([self._create_button(label=str(keyword)) for
-                                keyword in list(JOBS_SEARCH_KEYWORDS.keys())[lower_index:higher_index]])
-            if higher_index < len(JOBS_SEARCH_KEYWORDS):
-                new_buttons.append(self._create_button(emoji=NEXT_BUTTON_LABEL))
-
-        async def keyword_selection_handler(payload):
-            if payload.button.emoji:
-                if payload.button.emoji.name == BACK_BUTTON_LABEL:
-                    self.buttons_page -= 1
-                    return await self.setup_keyword_selection()
-                if payload.button.emoji.name == NEXT_BUTTON_LABEL:
-                    self.buttons_page += 1
-                    return await self.setup_keyword_selection()
-                if payload.button.emoji.name == CANCEL_BUTTON_LABEL:
-                    return await self.goto_search()
-            else:
-                self.keyword = payload.button.label
-                await self.goto_search()
-
-        self.menu.set_relay(keyword_selection_handler)
-        await self.menu.update(new_pages=[new_page], new_buttons=new_buttons)
-
-    async def goto_search(self):
-        await self.callback(self.seniority, self.keyword)
-
-    async def start(self):
-        await self.menu.start()
 
 
 class Vagas(commands.Cog):
@@ -173,7 +101,7 @@ class Vagas(commands.Cog):
                 await menu.update(new_pages=[new_page], new_buttons=new_buttons)
                 await self.scrap_and_update_menu_with_jobs(seniority, menu, search)
 
-            assistant = JobsSearchAssistant(menu, assistant_callback)
+            assistant = SearchBuilderView(interaction, assistant_callback)
             await assistant.start()
 
     @vagas.error
