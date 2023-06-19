@@ -1,8 +1,10 @@
 import importlib
+import logging
 from typing import Optional
 
 import discord
 from discord import Interaction
+from discord.app_commands import AppCommandError, CheckFailure
 from discord.ext import commands, tasks
 
 import pomodoro.checkers
@@ -21,6 +23,8 @@ from pomodoro.session import PomodoroSettings, PomodoroSession
 from pomodoro.models import AlarmOptions
 from pomodoro.checkers import has_session, is_guild, is_in_voice_channel, user_channel_do_not_have_session, \
     is_session_owner, is_in_voice_channel_chat
+
+_log = logging.getLogger('discord.pomodoro')
 
 
 class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomodoro'):
@@ -119,6 +123,11 @@ class Pomodoro(commands.GroupCog, group_name='pomodoro', group_description='Pomo
 
     def get_helper(self):
         return ["Pomovacuum", help_view()['embed']]
+
+    async def cog_app_command_error(self, interaction: Interaction, error: AppCommandError):
+        if isinstance(error, CheckFailure):
+            return
+        _log.error(error, exc_info=error)
 
 
 async def setup(bot):
