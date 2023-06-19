@@ -2,7 +2,7 @@ import discord
 from discord import Interaction
 from discord.ext import commands
 
-from utils.view_menu import ViewMenu
+from shared.view_menu import ViewMenu
 
 
 class BotCommands(commands.Cog):

@@ -2,7 +2,7 @@ from typing import List
 
 from discord import Interaction, Embed
 
-from utils.buttons_menu import ButtonsMenu
+from shared.buttons_menu import ButtonsMenu
 
 BUTTONS = [{'emoji': "◀️"}, {'emoji': "⏪"}, {'emoji': "⏩"}, {'emoji': "▶"}]
 

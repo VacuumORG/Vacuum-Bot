@@ -2,7 +2,7 @@ from typing import TypeAlias, List
 
 from discord import Interaction, Embed
 
-from utils.buttons_menu import ButtonsMenu
+from shared.buttons_menu import ButtonsMenu
 
 PageType: TypeAlias = tuple[str, Embed | List[Embed]]
 
