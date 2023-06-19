@@ -2,7 +2,7 @@ from typing import TypeAlias, List
 
 from discord import Interaction, Embed
 
-from utils.menu_buttons import MenuButtons
+from utils.buttons_menu import ButtonsMenu
 
 PageType: TypeAlias = tuple[str, Embed | List[Embed]]
 
@@ -13,7 +13,7 @@ class ViewMenu:
         self.pages = pages
         self._page = 0
         self._actual_page: PageType = self.pages[0]
-        self._view = MenuButtons(owner=interaction.user, buttons=[{'label': page[0]} for page in self.pages])
+        self._view = ButtonsMenu(owner=interaction.user, buttons=[{'label': page[0]} for page in self.pages])
         self._view.callback = self.__view_callback
         self._view.update_callback = self.update
 

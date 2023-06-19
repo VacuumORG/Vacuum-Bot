@@ -2,7 +2,7 @@ from typing import List
 
 from discord import Interaction, Embed
 
-from utils.menu_buttons import MenuButtons
+from utils.buttons_menu import ButtonsMenu
 
 BUTTONS = [{'emoji': "◀️"}, {'emoji': "⏪"}, {'emoji': "⏩"}, {'emoji': "▶"}]
 
@@ -12,7 +12,7 @@ class Pagination:
         self.page = 0
         self.pages = pages
         self.interaction = interaction
-        self.buttons = MenuButtons(owner=interaction.user, buttons=BUTTONS)
+        self.buttons = ButtonsMenu(owner=interaction.user, buttons=BUTTONS)
         self.buttons.callback = self.__buttons_callback
 
     async def start(self):

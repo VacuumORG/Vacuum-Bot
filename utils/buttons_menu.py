@@ -18,7 +18,7 @@ def slice_list(arr, size):
     return [[x for x in arr[i * size:(i + 1) * size]] for i in range(math.ceil(len(arr) / size))]
 
 
-class MenuButtons(View):
+class ButtonsMenu(View):
     def __init__(self, owner: Member, buttons: List[ButtonArgs], max_page_buttons=25,
                  callback: Optional[Callable[[int, Interaction], Awaitable]] = None,
                  update_callback: Optional[Callable[[], Awaitable]] = None):

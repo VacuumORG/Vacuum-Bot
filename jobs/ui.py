@@ -11,7 +11,7 @@ from enums import JobLevel
 
 importlib.reload(utils)
 
-from utils.menu_buttons import MenuButtons
+from utils.buttons_menu import ButtonsMenu
 from utils.pagination import Pagination
 
 Job = TypedDict('Job', {'Job': str, 'Apply': str})
@@ -76,7 +76,7 @@ class SearchBuilderView:
         self._keywords = list(JOBS_SEARCH_KEYWORDS.keys())
         self._job_levels = [level for level in JobLevel]
         self._embed: discord.Embed | None = None
-        self._view: MenuButtons | None = None
+        self._view: ButtonsMenu | None = None
         self._owner = self.interaction.user
         self.level: JobLevel | None = None
         self.keyword = None
@@ -91,7 +91,7 @@ class SearchBuilderView:
         self._embed = discord.Embed(title="Vacuum Vagas",
                                     description="Bem vindo ao bot de vagas da Vacuum!\nSelecione o nível de senioridade que deseja procurar.")
         buttons = [{'label': job.name} for job in self._job_levels]
-        self._view = MenuButtons(owner=self.interaction.user, buttons=buttons)
+        self._view = ButtonsMenu(owner=self.interaction.user, buttons=buttons)
         self._view.callback = self._job_level_selection_handler
 
         await self.interaction.response.send_message(embed=self._embed, view=self._view)
@@ -110,7 +110,7 @@ class SearchBuilderView:
                                     description=f"[{self.level.name}] Caso queira, uma palavra-chave pode ser adicionada na pesquisa.")
         buttons = [{'label': 'Não adicionar'}, *[{'label': keyword} for keyword in self._keywords]]
 
-        self._view = MenuButtons(owner=self.interaction.user, buttons=buttons, max_page_buttons=15)
+        self._view = ButtonsMenu(owner=self.interaction.user, buttons=buttons, max_page_buttons=15)
         self._view.callback = self._keyword_selection_handler
         self._view.update_callback = self._update_view
 
