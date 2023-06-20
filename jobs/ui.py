@@ -7,8 +7,8 @@ from discord.ui import View
 
 import shared.buttons_menu
 import shared.pagination
-from consts import JOBS_SEARCH_KEYWORDS
 from enums import JobLevel
+from jobs import keywords
 
 importlib.reload(shared.buttons_menu)
 importlib.reload(shared.pagination)
@@ -75,7 +75,7 @@ class SearchBuilderView:
         self.interaction = interaction
         self.callback = callback
         self.all_can_click = all_can_click
-        self._keywords = list(JOBS_SEARCH_KEYWORDS.keys())
+        self._keywords = keywords.get_keyword_list()
         self._job_levels = [level for level in JobLevel]
         self._embed: discord.Embed | None = None
         self._view: ButtonsMenu | None = None
