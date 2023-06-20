@@ -5,14 +5,16 @@ import discord
 from discord import Interaction
 from discord.ui import View
 
-import utils
+import shared.buttons_menu
+import shared.pagination
 from consts import JOBS_SEARCH_KEYWORDS
 from enums import JobLevel
 
-importlib.reload(utils)
+importlib.reload(shared.buttons_menu)
+importlib.reload(shared.pagination)
 
-from utils.buttons_menu import ButtonsMenu
-from utils.pagination import Pagination
+from shared.buttons_menu import ButtonsMenu
+from shared.pagination import Pagination
 
 Job = TypedDict('Job', {'Job': str, 'Apply': str})
 
