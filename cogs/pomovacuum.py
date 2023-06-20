@@ -11,7 +11,7 @@ import pomodoro.checkers
 import pomodoro.models
 import pomodoro.session
 import pomodoro.ui
-from utils.sound_controller import SoundController
+from shared.sound_controller import SoundController
 
 importlib.reload(pomodoro.models)
 importlib.reload(pomodoro.session)

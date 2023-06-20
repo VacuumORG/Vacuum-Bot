@@ -6,7 +6,7 @@
 import math
 from typing import TypedDict, List, Callable, Optional, Awaitable
 
-from discord import Interaction
+from discord import Interaction, Member
 from discord.ui import View, Button
 
 ButtonArgs = TypedDict('ButtonArgs',
@@ -18,8 +18,8 @@ def slice_list(arr, size):
     return [[x for x in arr[i * size:(i + 1) * size]] for i in range(math.ceil(len(arr) / size))]
 
 
-class MenuButtons(View):
-    def __init__(self, buttons: List[ButtonArgs], max_page_buttons=25,
+class ButtonsMenu(View):
+    def __init__(self, owner: Member, buttons: List[ButtonArgs], max_page_buttons=25,
                  callback: Optional[Callable[[int, Interaction], Awaitable]] = None,
                  update_callback: Optional[Callable[[], Awaitable]] = None):
         super().__init__()
@@ -27,6 +27,7 @@ class MenuButtons(View):
         self.max_page_buttons = min(max_page_buttons, 25) if max_page_buttons > 0 else 25
         self.callback = callback
         self.update_callback = update_callback
+        self.owner = owner
         self._page = 0
 
         self.pages = slice_list(self.buttons_args, self.max_page_buttons - 2)
@@ -36,12 +37,16 @@ class MenuButtons(View):
 
     async def __back_callback(self, interaction: Interaction):
         await interaction.response.defer()
+        if interaction.user != self.owner:
+            return
         self._page = self._page - 1 if self._page else len(self.pages) - 1
         self.update_view()
         await self.update_callback()
 
     async def __next_callback(self, interaction: Interaction):
         await interaction.response.defer()
+        if interaction.user != self.owner:
+            return
         self._page = 0 if self._page + 1 == len(self.pages) else self._page + 1
         self.update_view()
         await self.update_callback()
@@ -49,6 +54,8 @@ class MenuButtons(View):
     def __create_bt_callback(self, bt_index):
         async def __bt_callback(interaction: Interaction):
             await interaction.response.defer()
+            if interaction.user != self.owner:
+                return
             if callable(self.callback):
                 await self.callback(bt_index, interaction)
 
@@ -68,6 +75,3 @@ class MenuButtons(View):
             next_bt = Button(emoji="▶")
             next_bt.callback = self.__next_callback
             self.add_item(next_bt)
-
-
-a = MenuButtons(buttons=[{'label': 'sfsd'}])

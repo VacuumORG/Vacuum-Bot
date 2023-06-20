@@ -7,7 +7,7 @@ from discord import Interaction
 from discord.ext import commands, tasks
 
 from pomodoro.models import PomodoroState, PomodoroSettings, AlarmOptions
-from utils.sound_controller import SoundController
+from shared.sound_controller import SoundController
 
 
 def plural(quantity: int):
