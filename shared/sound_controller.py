@@ -1,7 +1,21 @@
 import asyncio
+import logging
 
 import discord
 from discord.ext import tasks, commands
+
+_log = logging.getLogger('discord.sound_controller')
+
+
+async def _wait_until_vc_connects(voice_client):
+    while not voice_client.is_connected():
+        await asyncio.sleep(0.05)
+
+
+async def _play_sound(voice_client, sound_path):
+    voice_client.play(discord.FFmpegPCMAudio(sound_path), after=lambda x: ...)
+    while voice_client.is_playing():
+        await asyncio.sleep(0.1)
 
 
 class SoundController:
@@ -40,24 +54,21 @@ class SoundController:
             return await channel.connect()
         if voice_client.channel != channel:
             await voice_client.move_to(channel)
-            while not voice_client.is_connected():
-                await asyncio.sleep(0.05)
+            await asyncio.wait_for(_wait_until_vc_connects(voice_client), timeout=3)
             await asyncio.sleep(0.1)
 
         return voice_client
-
-    async def _play_sound(self, voice_client, sound_path):
-        voice_client.play(discord.FFmpegPCMAudio(sound_path), after=lambda x: ...)
-        while voice_client.is_playing():
-            await asyncio.sleep(0.2)
 
     @tasks.loop(seconds=0.2)
     async def task_loop(self):
         while not self.queue.empty():
             sound_path, channel = await self.queue.get()
             async with self.lock:
-                voice_client = await self._connect_to_channel(channel)
-                await self._play_sound(voice_client, sound_path)
+                try:
+                    voice_client = await self._connect_to_channel(channel)
+                    await _play_sound(voice_client, sound_path)
+                except Exception as e:
+                    _log.error(f"Error on trying to play sound. Exception : {e}", exc_info=e)
 
             await asyncio.sleep(0.1)  # Delay between playing sounds
 
