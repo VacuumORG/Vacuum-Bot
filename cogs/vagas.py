@@ -27,6 +27,10 @@ class Vagas(commands.Cog):
         self.bot = bot
         self.scraper = Scraper()
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.scraper.start()
+
     def get_helper(self):
         help_text = """• /vagas [Junior|Pleno|Senior] - Pesquise por vagas utilizando parametros de busca.
         """
@@ -37,8 +41,7 @@ class Vagas(commands.Cog):
         view = SearchResultView(interaction, job_level.name, keyword)
         await view.waiting_view()
 
-        # jobs, errors = await self.scraper.scrap(job_level, search) // Add later
-        jobs, errors = await self.scraper.scrap(job_level)
+        jobs, errors = await self.scraper.scrap(job_level, keyword)
         for err in errors:
             _log.error(f"Error on scraping process. Exception : {err}", exc_info=err)
         if not jobs:
@@ -62,8 +65,8 @@ class Vagas(commands.Cog):
         if job_level:
             await self.do_job(interaction, job_level, search)
         else:
-            async def assistant_callback(_job_level, search):
-                await self.do_job(interaction, _job_level, search)
+            async def assistant_callback(_job_level, _search):
+                await self.do_job(interaction, _job_level, _search)
 
             assistant = SearchBuilderView(interaction, assistant_callback)
             await assistant.start()
