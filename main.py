@@ -47,10 +47,11 @@ async def on_member_join(member):
 
     embed = discord.Embed(
         title="Bem-vindo(a)!",
-        description=f"Olá {member.mention}, Seja bem vindo(a) a Vacuum! Mande sua primeira mensagem no bate-papo e já comece a subir de nível!",
+        description=f"Olá {member.mention}. Seja bem vindo(a) a Vacuum! Mande sua primeira mensagem no bate-papo e já comece a subir de nível!",
         color=discord.Color.purple()
     )
-    embed.set_thumbnail(url=member.avatar.url)
+    if member.avatar:
+        embed.set_thumbnail(url=member.avatar.url)
 
     await canal_bem_vindo.send(embed=embed)
 
