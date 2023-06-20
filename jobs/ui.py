@@ -100,7 +100,7 @@ class SearchBuilderView:
 
     async def _keyword_selection_handler(self, index, interaction):
         if index == 0:
-            await self.goto_search()
+            return await self.goto_search()
         self.keyword = self._keywords[index - 1]
         await self.goto_search()
 
