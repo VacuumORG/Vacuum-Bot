@@ -6,12 +6,12 @@ from jobs.async_url_fetch import fetch_urls
 from jobs.utils import sanitize_job_title
 
 
-def check_if_job_is_expired(job_soup):
+def is_job_expired(job_soup):
     return 'opacity-60p' in job_soup.attrs['class']
 
 
-def check_if_job_is_broken(job_soup):
-    return 'min-height-180' in job_soup.attrs['class']
+def is_job_cell(job_soup):
+    return bool(job_soup.find_all('h3'))
 
 
 async def scrap_thor_jobs(ssl_context, job_level: str, keyword_value: str = None) -> List[dict | Exception]:
@@ -28,7 +28,7 @@ async def scrap_thor_jobs(ssl_context, job_level: str, keyword_value: str = None
     soup = BeautifulSoup(resp_content[url], 'html.parser')
     jobs = soup.select('.cell-list')
 
-    jobs = [job for job in jobs if not check_if_job_is_broken(job) and not check_if_job_is_expired(job)]
+    jobs = [job for job in jobs if is_job_cell(job) and not is_job_expired(job)]
 
     jobs = [{'Job': sanitize_job_title(job.find_all('h3')[0].text),
              'Apply': "https://programathor.com.br" + job.select('a')[0].attrs['href'],
