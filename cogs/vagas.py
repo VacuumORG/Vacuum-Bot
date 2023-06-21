@@ -15,7 +15,7 @@ importlib.reload(jobs.scraper)
 importlib.reload(jobs.ui)
 
 from jobs.scraper import Scraper
-from jobs.ui import SearchBuilderView, SearchResultView
+from jobs.ui import SearchBuilderView, SearchResultView, help_view
 
 _log = logging.getLogger('discord')
 
@@ -32,10 +32,7 @@ class Vagas(commands.Cog):
         self.scraper.start()
 
     def get_helper(self):
-        help_text = """• /vagas [Junior|Pleno|Senior] - Pesquise por vagas utilizando parametros de busca.
-        """
-        group_name = "Vagas"
-        return [group_name, help_text]
+        return ["Vagas", help_view()['embed']]
 
     async def do_job(self, interaction, job_level: JobLevel, keyword):
         view = SearchResultView(interaction, job_level.name, keyword)
