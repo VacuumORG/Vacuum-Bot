@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from bs4 import BeautifulSoup
 
+from enums import JobLevel
 from jobs.async_url_fetch import fetch_urls
 from jobs.utils import sanitize_job_title
 
@@ -14,14 +15,14 @@ def is_job_cell(job_soup):
     return bool(job_soup.find_all('h3'))
 
 
-async def scrap_thor_jobs(ssl_context, job_level: str, keyword_value: str = None) -> List[dict | Exception]:
+async def scrap_thor_jobs(ssl_context, job_level: JobLevel, keyword_value: str = None) -> List[dict | Exception]:
     """
     Args:
         search (str): this string can only receive 3 parameters which are 'Júnior'/'Pleno'/'Sênior'.
     Returns:
         List[dict]: returns a dictionary list with the keys 'Job: str'/'Apply: str'/'Techs: list of str'.
     """
-    url = f'https://programathor.com.br{keyword_value if keyword_value else "/jobs"}/remoto?expertise={job_level}'
+    url = f'https://programathor.com.br{keyword_value if keyword_value else "/jobs"}/remoto?expertise={job_level.name}'
     resp_content = await fetch_urls([url], ssl_context)
     if isinstance(resp_content[url], Exception):
         return [resp_content[url]]

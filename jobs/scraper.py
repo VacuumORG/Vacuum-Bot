@@ -17,12 +17,24 @@ TIME_TO_REFRESH_BUFFER = 60 * 10  # 10 min
 
 
 async def scrap_jobs(ssl_context, job_level: JobLevel, keyword: Optional[Keyword] = None):
-    linkedin = asyncio.create_task(
-        scrap_linkedin_jobs(ssl_context, job_level.name, keyword.linkedin_value if keyword else None))
-    nerdin = asyncio.create_task(scrap_nerdin_jobs(ssl_context, job_level, keyword.nerdin_value if keyword else None))
-    thor = asyncio.create_task(scrap_thor_jobs(ssl_context, job_level.name, keyword.thor_value if keyword else None))
+    def create_task(scrap_func, keyword):
+        return asyncio.create_task(scrap_func(ssl_context, job_level, keyword))
 
-    results = await asyncio.gather(linkedin, nerdin, thor, return_exceptions=True)
+    scrapers = [(scrap_linkedin_jobs, 'linkedin_value'), (scrap_nerdin_jobs, 'nerdin_value'),
+                (scrap_thor_jobs, 'thor_value')]
+    tasks = []
+    for scraper, keyword_value_name in scrapers:
+        if not keyword:
+            tasks.append(create_task(scraper, None))
+            continue
+        keyword_value = keyword.__getattribute__(keyword_value_name)
+        if isinstance(keyword_value, list):
+            for key in keyword_value:
+                tasks.append(create_task(scraper, key))
+        else:
+            tasks.append(create_task(scraper, keyword_value))
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     flat_results = []
     for result in results:
         if isinstance(result, list):
@@ -59,7 +71,7 @@ class Scraper:
         self.buffer[(job_level, keyword)] = [time.time(), jobs]
         return jobs, errors
 
-    async def scrap(self, job_level: JobLevel, keyword=None):
+    async def scrap(self, job_level: JobLevel, keyword: Optional[str] = None):
         if keyword:
             keyword = try_to_find_keyword(search=keyword, nerdin_ids=self._nerdin_ids, thor_ids=self._thor_ids)
         search_id = (job_level, keyword)

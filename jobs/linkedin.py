@@ -2,12 +2,13 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
+from enums import JobLevel
 from jobs.async_url_fetch import fetch_urls
 from jobs.utils import sanitize_job_title
 
 
-async def scrap_linkedin_jobs(ssl_context, job_level: str, keyword: str = None) -> List[dict | Exception]:
-    search = f"{keyword} {job_level}" if keyword else f"TI {job_level}"
+async def scrap_linkedin_jobs(ssl_context, job_level: JobLevel, keyword: str = None) -> List[dict | Exception]:
+    search = f"{keyword} {job_level.name}" if keyword else f"TI {job_level.name}"
     url = f'https://www.linkedin.com/jobs/search/?f_WT=2&geoId=106057199&keywords={search}&location=Brazil&position=1&pageNum=0&f_TPR=r2592000'
 
     resp_content = await fetch_urls([url], ssl_context)
