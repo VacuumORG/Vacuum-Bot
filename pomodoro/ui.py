@@ -6,6 +6,7 @@ from discord.ui import View, Button
 from pomodoro.session import PomodoroSettings, PomodoroSession, PomodoroState
 
 COLOUR = Colour.red()
+EMOJI_STR = ':tomato:'
 
 
 def __add_settings_fields(embed: Embed, settings: PomodoroSettings):
@@ -31,13 +32,14 @@ def __convert_session_state(state: PomodoroState):
 
 
 def session_start_view(settings: PomodoroSettings):
-    embed = Embed(title=":tomato: PomoVacuum", description="Começando nova sessão de pomodoro com as configurações:",
+    embed = Embed(title=f"{EMOJI_STR} PomoVacuum",
+                  description="Começando nova sessão de pomodoro com as configurações:",
                   colour=COLOUR)
     return {'embed': __add_settings_fields(embed, settings)}
 
 
 def session_info_view(session: PomodoroSession):
-    embed = Embed(title=":tomato: PomoVacuum",
+    embed = Embed(title=f"{EMOJI_STR} PomoVacuum",
                   description=f"Informações sobre a sessão do canal {session.channel.mention}:", colour=COLOUR)
     __add_settings_fields(embed, session.settings)
     embed.add_field(name="Estado", value=f"{__convert_session_state(session.state)}")
@@ -56,7 +58,7 @@ def __create_short_session_info(session: PomodoroSession):
 
 
 def all_sessions_info_view(sessions: List[PomodoroSession]):
-    embed = Embed(title=":tomato: PomoVacuum", description=f"Sessões ativas:", colour=COLOUR)
+    embed = Embed(title=f"{EMOJI_STR} PomoVacuum", description=f"Sessões ativas:", colour=COLOUR)
 
     for i, session in enumerate(sessions):
         embed.add_field(name=f"{i + 1}", value=f"{__create_short_session_info(session)}")
@@ -71,7 +73,7 @@ def help_view():
                   f"e aumentar a produtividade.\n Com nosso bot inicie sua sessão de pomodoro customizável " \
                   f"em um chat de voz e foque nos estudos/trabalhos, o bot notificará quando um 'pomodoro' acabar.\n\n" \
                   f"Aqui estão mais detalhes sobre como utilizar nossos comandos:\n"
-    embed = Embed(title=":tomato: PomoVacuum", description=description, colour=COLOUR)
+    embed = Embed(title=f"{EMOJI_STR} PomoVacuum", description=description, colour=COLOUR)
     embed.add_field(name=":arrow_forward:   /pomodoro start",
                     value="Cria uma sessão de pomodoro atrelada ao canal de voz em que você estiver conectado."
                           "O comando aceita parametros permitindo configurar seu pomodoro como quiser."
@@ -96,14 +98,14 @@ def help_view():
 
 
 def close_session_view(ok_callback: Callable[[dict], Awaitable], cancel_callback: Callable[[], Awaitable]):
-    embed = Embed(title=":tomato: PomoVacuum", description="Deseja encerrar a sessão de pomodoro?", colour=COLOUR)
+    embed = Embed(title=f"{EMOJI_STR} PomoVacuum", description="Deseja encerrar a sessão de pomodoro?", colour=COLOUR)
     view = View()
     ok_bt = Button(label="Sim", style=ButtonStyle.danger)
     cancel_bt = Button(label="Cancelar", style=ButtonStyle.secondary)
 
     async def __ok_callback(interaction: Interaction):
         await interaction.response.defer()
-        closed_view = {'embed': None, 'view': None, 'content': ":tomato: Sessão encerrada!"}
+        closed_view = {'embed': None, 'view': None, 'content': f"{EMOJI_STR} Sessão encerrada!"}
         await ok_callback(closed_view)
 
     async def __cancel_callback(interaction: Interaction):
